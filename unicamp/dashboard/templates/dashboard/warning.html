@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Instruções</title>
+    <style>
+
+        .imgbox {
+            display: grid;
+            height: 100%;
+        }
+        .center-fit {
+            max-width: 100%;
+            max-height: 400vh;
+            margin: auto;
+        }
+    </style>
+
+
+
+</head>
+<body>
+    <div class="imgbox">
+        {% load static %} <img class = 'center-fit' src="{% static 'Warning3.jpg' %}"/>
+    </div>
+
+</body>
+</html>
