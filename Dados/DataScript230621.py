@@ -15,6 +15,10 @@ df_esp['MATRICULA RA'] = df_esp['MATRICULA RA'].str.replace("[ ]{2,}","00000",re
 #ajustar os nomes das colunas de acordo com o models.py
 df_esp = df_esp.rename(columns = {'INSTITUICAO': 'instituicao', 'NIVEL': 'nivel', 'UNIDADE':'unidade', 'UNIDADE SIGLA': 'sigla_uni', 'NOME CURTO': 'nome_curto', 'MATRICULA RA': 'ra', 'PAPEL':'papel'})
 
+df_esp['id'] = range(0,len(df_esp['instituicao']))
+
+df_esp = df_esp[['id','ra','nome_curto','papel','instituicao','nivel','unidade','sigla_uni']]
+
 #exportar o data frame normalizado como csv. Este é o primeiro df que será usado para quantificar 
 #os alunos e professores por disciplina, etc.
 df_esp.to_csv('espelho_comp.csv', encoding = 'latin-1', sep=';', index=False)
