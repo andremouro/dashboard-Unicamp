@@ -22,6 +22,15 @@ class DACMOOD(models.Model):
     instituicao = models.CharField(max_length=35)
     nivel = models.CharField(max_length=35)
     unidade = models.CharField(max_length=35)
-    hosp = models.CharField(max_length=35)
+    sigla_uni = models.CharField(max_length=35)
     def __str__(self):	##Esta linha fará com que as entradas de dados no nosso banco de dados sejam apresentadas pelo 'id'
         return self.id
+        
+
+class HOST(models.Model):
+    nome_curto = models.CharField(max_length=35)
+    instituicao = models.CharField(max_length=35)
+    nivel = models.CharField(max_length=35)
+    unidade = models.CharField(max_length=35)
+    sigla_uni = models.CharField(max_length=35)
+    hosp = models.CharField(max_length=35)
