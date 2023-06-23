@@ -20,7 +20,6 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                 'instituicao': x.instituicao,
                 'nivel': x.nivel,
                 'unidade': x.unidade,
-                'hosp': x.hosp
             } for x in data
         ]
         df = pd.DataFrame(chart)
@@ -35,7 +34,7 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         pessoas_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('ra')
         frames = [pessoas_U, pessoas_C, pessoas_L]
         pessoas = pd.concat(frames)
-        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS  ', ['instituicao']] = 'Campi Limeira'
+        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
         pessoas.loc[pessoas['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
         pessoas.loc[
             pessoas['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
@@ -47,13 +46,13 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         disc_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('nome_curto')
         frames = [disc_U, disc_C, disc_L]
         disc = pd.concat(frames)
-        disc.loc[disc['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS  ', ['instituicao']] = 'Campi Limeira'
+        disc.loc[disc['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
         disc.loc[disc['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
         disc.loc[
             disc['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
 
         disc['nivel'] = disc['nivel'].replace(
-            {'ENSINO MEDIO': 'Ensino Médio', 'GRADUACAO': 'Graduação', 'POS GRADUACAO': 'Pós Graduação'})
+            {'ENSINO MÉDIO': 'Ensino Médio', 'GRADUAÇÃO': 'Graduação', 'PÓS GRADUAÇÃO': 'Pós Graduação'})
 
         # Tratamento para as cargas médias por disciplina de cada instituição
         df3 = df.groupby(['unidade', 'papel', 'nome_curto']).count()['ra'].reset_index()
