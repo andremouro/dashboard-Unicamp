@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from .models import File
 from .models import DACMOOD
+from .models import HOST
 from django.views.generic import View
 import pandas as pd
 import plotly.express as px
@@ -233,3 +234,73 @@ class PopView(View):
     def get(self, request, *args,
             **kwargs):
         return render(request, 'dashboard/warning.html')
+
+class HostView(View):
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index2.html 
+        data = HOST.objects.all()
+        chart = [
+            {
+                'nome_curto': x.nome_curto,
+                'instituicao': x.instituicao,
+                'nivel': x.nivel,
+                'unidade': x.unidade,
+                'sigla_uni': x.sigla_uni,
+                'hosp': x.hosp,
+            } for x in data
+        ]
+        df = pd.DataFrame(chart)
+        df.loc[df['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
+        df.loc[df['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
+        df.loc[
+            df['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
+        
+        df['hosp'] = df['hosp'].replace(['GCLASSROOM', 'MOODLE', 'MOODLE_GCLASSROOM'],['Classroom', 'Moodle', 'Moodle + Classroom'])
+        
+        #contagem de disciplinas por hospedagem em cada instituicao
+        discp = df.groupby(['instituicao', 'hosp']).count()['nome_curto'].reset_index()
+        
+        #contagem de disciplinas por hospedagem em cada unidade
+        discu = df.groupby(['unidade', 'hosp']).count()['nome_curto'].reset_index()
+        
+        bar = px.bar(discp, x="instituicao", y="nome_curto", color="hosp",
+                    title="Número de disciplinas por local hospedado",
+                     labels={
+                         "instituicao": "Instituição",
+                         "nome_curto": "Número de disciplinas",
+                         "hosp": "Hospedagem"
+                     }, color_discrete_map={'DAC': px.colors.qualitative.Antique[0], 'Classroom': px.colors.qualitative.Antique[1], 
+                     'Moodle': px.colors.qualitative.Antique[2], 'Moodle + Classroom': px.colors.qualitative.Antique[3] })
+
+        bar.update_layout(xaxis={'categoryorder': 'array',
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campi Piracicaba', 'Campi Limeira',
+                                                   'Campi Campinas']})
+                                                   
+                                                   
+        pie2 = px.pie(discp, values='nome_curto', names='hosp',
+                      title='Disciplinas por Hospedagem',
+                      labels={
+                          'nome_curto': 'Número de disciplinas',
+                          "hosp": 'Hospedagem'
+                      },
+                      color_discrete_sequence=(px.colors.qualitative.Antique[0], px.colors.qualitative.Antique[1],px.colors.qualitative.Antique[2],
+                      px.colors.qualitative.Antique[3]),
+                      category_orders={
+                          'instituicao': ['DAC', 'Classroom', 'Moodle', 'Moodle + Classroom']}
+                      )
+
+        bar2 = px.bar(discu, x='unidade', y='nome_curto', color = 'hosp',
+                        title = 'Número de disciplinas por unidade',
+                        labels={
+                            'unidade': 'Unidade',
+                            'nome_curto': 'Número de disciplinas',
+                            'hosp': 'Hospedagem'
+                        },
+                        color_discrete_sequence=px.colors.qualitative.Antique,
+                        height=1000)
+                                                   
+        fig1 = plot(bar, output_type='div')
+        fig2 = plot(pie2, output_type='div')
+        fig3 = plot(bar2, output_type='div')
+        ctx = {'fig1': fig1, 'fig2':fig2, 'fig3':fig3}
+        return render(request, 'dashboard/index2.html', ctx)
