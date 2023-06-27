@@ -6,6 +6,7 @@ from django.views.generic import View
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
+import numpy as np
 
 
 # Classe da nova view usando o banco de dados atualizados
@@ -255,7 +256,9 @@ class HostView(View):
         df.loc[
             df['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
         
-        df['hosp'] = df['hosp'].replace(['GCLASSROOM', 'MOODLE', 'MOODLE_GCLASSROOM'],['Classroom', 'Moodle', 'Moodle + Classroom'])
+        hosts = np.unique(df['hosp'])
+        
+        df['hosp'] = df['hosp'].replace([hosts[0], hosts[1], hosts[2], hosts[3]],['DAC', 'Classroom',  'Moodle', 'Moodle + Classroom'])
         
         #contagem de disciplinas por hospedagem em cada instituicao
         discp = df.groupby(['instituicao', 'hosp']).count()['nome_curto'].reset_index()
