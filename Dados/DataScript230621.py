@@ -18,10 +18,18 @@ df_esp = df_esp.rename(columns = {'INSTITUICAO': 'instituicao', 'NIVEL': 'nivel'
 df_esp['id'] = range(0,len(df_esp['instituicao']))
 
 df_esp = df_esp[['id','ra','nome_curto','papel','instituicao','nivel','unidade','sigla_uni']]
+#aplicar hash aos RAs
+
+for i in range(0,len(df_esp['ra'])):
+    df_esp.loc[i, 'ra']=(hash(df_esp.loc[i, 'ra']))
+
 
 #exportar o data frame normalizado como csv. Este é o primeiro df que será usado para quantificar 
 #os alunos e professores por disciplina, etc.
 df_esp.to_csv('espelho_comp.csv', encoding = 'latin-1', sep=';', index=False)
+
+#Remover o arquivo com os dados brutos
+#os.remove('DASH.eaespelho.todos.csv')
 
 ###############################################################################
 
@@ -48,6 +56,7 @@ df_comp['hosp'] = df_comp['hosp'].str.replace(r'^\s*$', "DAC", regex=True)
 
 
 df_comp = df_comp.drop(['ORIGEM_x','ORIGEM_y'],axis=1)
+
 
 #exportar segunda tabela com local de hospedagem de cada disciplina
 df_comp.to_csv('dftemp.csv', encoding = 'latin-1', sep=';', index=False)

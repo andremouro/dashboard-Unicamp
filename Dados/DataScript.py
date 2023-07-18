@@ -96,4 +96,6 @@ df2 = df2.dropna()
 df2.to_csv('disciplinas.csv', header=False)
 
 ##
-
+#Remover os arquivos com dados brutos
+#os.remove('DASH - Moodle.csv')
+#os.remove('DASH EAESPELHO.csv')
