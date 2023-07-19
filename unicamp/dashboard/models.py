@@ -16,7 +16,7 @@ class File(models.Model):
 
 class DACMOOD(models.Model):
     id = models.IntegerField(primary_key=True)
-    ra = models.CharField(max_length=35)
+    ra = models.CharField(max_length=100)
     nome_curto = models.CharField(max_length=35)
     papel = models.CharField(max_length=35)
     instituicao = models.CharField(max_length=35)
