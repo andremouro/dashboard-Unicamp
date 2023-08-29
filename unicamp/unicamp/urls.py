@@ -8,7 +8,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.NewView.as_view()),
     path('pop/', views.PopView.as_view()),
-    path('host/', views.HostView.as_view())
+    path('host/', views.HostView.as_view()),
+    path('socio/', views.SocioView.as_view())
 ]
 
 urlpatterns += staticfiles_urlpatterns()

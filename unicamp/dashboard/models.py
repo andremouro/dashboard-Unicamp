@@ -36,7 +36,7 @@ class HOST(models.Model):
     hosp = models.CharField(max_length=35)
     
 class SOCIO(models.Model):
-    MATRICULA_RA = models.CharField(max_length=100)
+    ra = models.CharField(max_length=100)
     SEXO = models.CharField(max_length = 10)
     COR_RACA = models.CharField(max_length = 100)
     ESC_FUNDAMENTAL1 = models.CharField(max_length = 100)
@@ -50,3 +50,11 @@ class SOCIO(models.Model):
     CPE = models.IntegerField()
     CR = models.IntegerField()
     CRP = models.IntegerField()
+    CLASSE = models.CharField(max_length = 2)
+    id = models.IntegerField(primary_key=True)
+    nome_curto = models.CharField(max_length=35, default='NA')
+    papel = models.CharField(max_length=35, default='NA')
+    instituicao = models.CharField(max_length=35, default='NA')
+    nivel = models.CharField(max_length=35, default='NA')
+    unidade = models.CharField(max_length=35, default='NA')
+    sigla_uni = models.CharField(max_length=35, default='NA')    

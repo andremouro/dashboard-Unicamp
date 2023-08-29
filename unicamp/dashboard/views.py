@@ -2,17 +2,28 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from .models import File
 from .models import DACMOOD
 from .models import HOST
+from .models import SOCIO
 from django.views.generic import View
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
 import numpy as np
-
+import os 
+import time
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Classe da nova view usando o banco de dados atualizados
 class NewView(View):  # definimos a classe HomeView que será chamada dentro do urls.py
     def get(self, request, *args,
             **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index.html (que está dentro de irisjs)
+        path = r'C:\Users\André\Desktop\DashboardUnicamp\Dados\espelho_comp.csv'
+        ti_m = os.path.getmtime(path)
+        
+        m_ti = time.ctime(ti_m)
+        m_ti = time.strptime(m_ti)
+        m_ti = time.strftime("%d-%m-%Y %H:%M:%S", m_ti)
+        
         data = DACMOOD.objects.all()
         chart = [
             {
@@ -37,9 +48,9 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         frames = [pessoas_U, pessoas_C, pessoas_L]
         pessoas = pd.concat(frames)
         pessoas.loc[pessoas['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
-        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
+        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
         pessoas.loc[
-            pessoas['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
+            pessoas['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
         pessoas['papel'] = pessoas['papel'].replace({'P': 'Docente', 'A': 'Discente', 'F': 'Formador'})
 
         # Tratamento dos dados; Número de disciplinas por instituição. Remoção de duplicatas de usuários de cada uma das instituições e posterior combinação em um único dataframe
@@ -49,9 +60,9 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         frames = [disc_U, disc_C, disc_L]
         disc = pd.concat(frames)
         disc.loc[disc['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
-        disc.loc[disc['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
+        disc.loc[disc['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
         disc.loc[
-            disc['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
+            disc['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
 
         disc['nivel'] = disc['nivel'].replace(
             {'ENSINO MÉDIO': 'Ensino Médio', 'GRADUAÇÃO': 'Graduação', 'PÓS GRADUAÇÃO': 'Pós Graduação'})
@@ -95,8 +106,8 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                      custom_data=["papel"])
 
         bar.update_layout(xaxis={'categoryorder': 'array',
-                                 'categoryarray': ['COTIL', 'COTUCA', 'Campi Piracicaba', 'Campi Limeira',
-                                                   'Campi Campinas']})
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})
 
         bar2 = px.bar(bar_df_disc, x="instituicao", y="Contagem", color="nivel",
                       title="Número disciplinas por instituição",
@@ -110,8 +121,8 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                       )
 
         bar2.update_layout(xaxis={'categoryorder': 'array',
-                                  'categoryarray': ['COTIL', 'COTUCA', 'Campi Piracicaba', 'Campi Limeira',
-                                                    'Campi Campinas']})
+                                  'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                    'Campus Campinas']})
 
         bar5 = px.bar(pie_df_disc, y='Contagem', x='unidade', title='Disciplinas por Unidade', color='unidade',
                       labels={
@@ -130,7 +141,7 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                       },
                       color_discrete_sequence=('#B18642', '#AFBEA2', '#9CB4AC'),
                       category_orders={
-                          'instituicao': ['COTIL', 'COTUCA', 'Campi Piracicaba', 'Campi Limeira', 'Campi Campinas']}
+                          'instituicao': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira', 'Campus Campinas']}
                       )
 
         pie3 = px.pie(bar_df_disc, values='Contagem', names='nivel', title='Disciplinas por nível',
@@ -227,7 +238,7 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         fig7 = plot(bar4, output_type='div')
         fig8 = plot(bar6, output_type='div')
         ctx = {'fig1': fig1, 'fig2': fig2, 'fig3': fig3, 'fig4': fig4, 'fig5': fig5, 'fig6': fig6, 'fig7': fig7,
-               'fig8': fig8}
+               'fig8': fig8, 'time' : m_ti}
 
         return render(request, 'dashboard/index.html', ctx)
 
@@ -252,9 +263,9 @@ class HostView(View):
         ]
         df = pd.DataFrame(chart)
         df.loc[df['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
-        df.loc[df['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campi Piracicaba'
+        df.loc[df['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
         df.loc[
-            df['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campi Campinas'
+            df['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
         
         hosts = np.unique(df['hosp'])
         
@@ -276,8 +287,8 @@ class HostView(View):
                      'Moodle': px.colors.qualitative.Antique[2], 'Moodle + Classroom': px.colors.qualitative.Antique[3] })
 
         bar.update_layout(xaxis={'categoryorder': 'array',
-                                 'categoryarray': ['COTIL', 'COTUCA', 'Campi Piracicaba', 'Campi Limeira',
-                                                   'Campi Campinas']})
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})
                                                    
                                                    
         pie2 = px.pie(discp, values='nome_curto', names='hosp',
@@ -307,3 +318,438 @@ class HostView(View):
         fig3 = plot(bar2, output_type='div')
         ctx = {'fig1': fig1, 'fig2':fig2, 'fig3':fig3}
         return render(request, 'dashboard/index2.html', ctx)
+        
+
+#Criação da classe para visualização dos dados socioeconomicos. Não será feita a modelagem dos dados com CR e CP.
+class SocioView(View):
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index2.html 
+        #Extração dos dados armazenados dentro do model SOCIO
+        data = SOCIO.objects.all()
+        chart = [
+            {
+                'ra': x.ra,
+                'sexo': x.SEXO,
+                'cor': x.COR_RACA,
+                'fund1': x.ESC_FUNDAMENTAL1,
+                'fund2': x.ESC_FUNDAMENTAL2,
+                'medio': x.ESC_MEDIO,
+                'est_civil': x.EST_CIVIL,
+                'data_nasc': x.DATA_NASCIMENTO,
+                'filhos': x.FILHOS,
+                'classe': x.CLASSE,
+                'nome_curto': x.nome_curto,
+                'instituicao': x.instituicao,
+                'nivel': x.nivel,
+                'unidade': x.unidade,
+                'sigla_uni': x.sigla_uni,
+                'papel': x.papel
+            } for x in data
+        ]
+        #Armazenamos os dados dentro do dataframe 'df'
+        df = pd.DataFrame(chart)
+        
+        #Ajustar a nomenclatura de cada gênero, cor
+        df['sexo'] = df['sexo'].replace(['F','M'],['Feminino', 'Masculino'])        
+        df['cor'] = df['cor'].replace(['BRANCA','AMARELA','INDÍGENA','NÃO DECLARADA','PARDA','PRETA'],['Branca', 'Amarela','Indígena','Não Declarada','Parda','Preta'])        
+        
+        #Algumas correções no 'df'
+        df.loc[df['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
+        df.loc[df['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
+        df.loc[
+            df['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
+
+        #Primeiro, vamos um dataframe com a contagem de pessoas de cada sexo em cada instituição
+        df_unique = df.drop_duplicates(subset=['ra'])
+        df_sex_inst1 = df_unique.groupby(['instituicao', 'sexo']).count()['ra'].reset_index()
+        df_sex_inst = df_unique.groupby(['instituicao', 'sexo','nivel']).count()['ra'].reset_index()
+        
+        #Construir um gráfico de barras com o número de pessoas de cada sexo por instituição
+        sex = {
+              'Feminino' : '#be4d25',
+              'Masculino' : '#2596be'
+        
+        }
+        
+        nivel = ['ENSINO MÉDIO', 'GRADUAÇÃO', 'PÓS GRADUAÇÃO']
+        
+        bar_sex_inst = go.Figure()
+        
+        for i in sex:
+            bar_sex_inst.add_trace(go.Bar(name = i, x = df_sex_inst1[df_sex_inst1.sexo == i].instituicao, 
+                        y = df_sex_inst1[df_sex_inst1.sexo == i].ra,
+                        marker_color = sex[i]))
+
+        for j in nivel:
+            for i in sex:
+                bar_sex_inst.add_trace(go.Bar(name = i, x = df_sex_inst[df_sex_inst.sexo == i][ df_sex_inst.nivel == j].instituicao,
+                            y = df_sex_inst[df_sex_inst.sexo == i][df_sex_inst.nivel == j].ra, 
+                            marker_color = sex[i], visible=False))
+                            
+        bar_sex_inst.update_layout(barmode = 'stack', title='Selecione os níveis', xaxis=dict(title='Instituição'), 
+                                   yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+        
+        bar_sex_inst.update_layout(xaxis={'categoryorder': 'array',
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})  
+                
+
+        bar_sex_inst.update_layout(updatemenus = [
+                dict(
+
+                    buttons = list([
+                        dict(
+
+                             label = 'Todos',
+                             method = 'update',
+                             args=[{'visible': [True]*2+[False]*6}]
+                    
+                        ),
+                        dict(label = 'Ensino Médio',
+                             method = 'update',
+                             args=[{'visible': [False]*2 + [True]*2 + [False]*4}]
+                    
+                        ),
+                        dict(label = 'Graduação',
+                             method = 'update',
+                             args=[{'visible': [False]*4 + [True]*2 + [False]*2}]
+                    
+                        ),
+                        dict(label = 'Pós Graduação',
+                             method = 'update',
+                             args=[{'visible': [False]*6 + [True]*2 }]
+                    
+                        )
+                ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])
+
+######################################################################################################################
+
+        #Dataframe Sexo X Instituicao X Papel
+        #Dataframe com a contagem de pessoas de cada sexo em cada instituição por papel
+        df_unique = df.drop_duplicates(subset=['ra'])
+        df_sex_inst_pap = df_unique.groupby(['instituicao', 'sexo','papel']).count()['ra'].reset_index()        
+        
+        papel = ['A', 'P', 'F']
+        
+        bar_sex_inst_pap = go.Figure()
+        
+        for i in sex:
+            bar_sex_inst_pap.add_trace(go.Bar(name = i, x = df_sex_inst1[df_sex_inst1.sexo == i].instituicao, 
+                        y = df_sex_inst1[df_sex_inst1.sexo == i].ra,
+                        marker_color = sex[i]))
+
+        for j in papel:
+            for i in sex:
+                bar_sex_inst_pap.add_trace(go.Bar(name = i, x = df_sex_inst_pap[df_sex_inst_pap.sexo == i][ df_sex_inst_pap.papel == j].instituicao,
+                            y = df_sex_inst_pap[df_sex_inst_pap.sexo == i][df_sex_inst_pap.papel == j].ra, 
+                            marker_color = sex[i], visible=False))
+                            
+        bar_sex_inst_pap.update_layout(barmode = 'stack', title='Selecione o papel desempenhado', xaxis=dict(title='Instituição'), 
+                                   yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+        
+        bar_sex_inst_pap.update_layout(xaxis={'categoryorder': 'array',
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})  
+        
+        bar_sex_inst_pap.update_layout(updatemenus = [
+                dict(
+
+                    buttons = list([
+                        dict(
+
+                             label = 'Todos',
+                             method = 'update',
+                             args=[{'visible': [True]*2+[False]*6}]
+                    
+                        ),
+                        dict(label = 'Discente',
+                             method = 'update',
+                             args=[{'visible': [False]*2 + [True]*2 + [False]*4}]
+                    
+                        ),
+                        dict(label = 'Docente',
+                             method = 'update',
+                             args=[{'visible': [False]*4 + [True]*2 + [False]*2}]
+                    
+                        ),
+                        dict(label = 'Formador',
+                             method = 'update',
+                             args=[{'visible': [False]*6 + [True]*2 }]
+                    
+                        )
+                ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])        
+
+
+
+
+
+######################################################################################################################                        
+        #Dataframe Raça X Instituição X Nivel
+        df_cor_inst = df_unique.groupby(['instituicao','cor','nivel']).count()['ra'].reset_index()
+        df_cor_inst1 = df_unique.groupby(['instituicao','cor']).count()['ra'].reset_index()
+
+        #Gráfico de barras Raça X Instituicao X Nivel
+        
+             
+        colors = {
+                 'Branca':'#b2bbc7',
+                 'Amarela':'#AB8F5E',
+                 'Indígena':'#BB9B89',
+                 'Parda':'#7C5440',
+                 'Preta':'#433D3D',
+                 'Não Declarada':'#4D7CA8'}
+        
+                 
+        
+        papel = ['A','P','F']
+        
+        bar_cor_inst = go.Figure()              
+                
+        for i in colors:
+            bar_cor_inst.add_trace( go.Bar(name = i, x = df_cor_inst1[df_cor_inst1.cor == i].instituicao, 
+                        y = df_cor_inst1[df_cor_inst1.cor == i].ra,
+                        marker_color = colors[i]))
+        
+        for j in nivel:
+            for i in colors:
+                bar_cor_inst.add_trace(go.Bar(name = i, x = df_cor_inst[df_cor_inst.cor == i][ df_cor_inst.nivel == j].instituicao,
+                            y = df_cor_inst[df_cor_inst.cor == i][df_cor_inst.nivel == j].ra,
+                            marker_color = colors[i], visible=False))
+        
+                     
+        bar_cor_inst.update_layout(barmode = 'stack', title='Selecione os níveis', xaxis=dict(title='Instituição'), 
+                                   yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+        
+        bar_cor_inst.update_layout(xaxis={'categoryorder': 'array',
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})  
+                
+        bar_cor_inst.update_layout(updatemenus = [
+                dict(
+
+                    buttons = list([
+                        dict(
+
+                             label = 'Todos',
+                             method = 'update',
+                             args=[{'visible': [True]*6+[False]*18}]
+                    
+                        ),
+                        dict(label = 'Ensino Médio',
+                             method = 'update',
+                             args=[{'visible': [False]*6 + [True]*6 + [False]*12}]
+                    
+                        ),
+                        dict(label = 'Graduação',
+                             method = 'update',
+                             args=[{'visible': [False]*12 + [True]*6 + [False]*6}]
+                    
+                        ),
+                        dict(label = 'Pós Graduação',
+                             method = 'update',
+                             args=[{'visible': [False]*18 + [True]*6 }]
+                    
+                        )
+                ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])
+
+######################################################################################################################                        
+        #Dataframe Raça X Instituição X Papel
+        df_cor_inst = df_unique.groupby(['instituicao','cor','papel']).count()['ra'].reset_index()
+        df_cor_inst1 = df_unique.groupby(['instituicao','cor']).count()['ra'].reset_index()
+
+        #Gráfico de barras Raça X Instituicao X Papel
+        
+             
+        colors = {
+                 'Branca':'#b2bbc7',
+                 'Amarela':'#AB8F5E',
+                 'Indígena':'#BB9B89',
+                 'Parda':'#7C5440',
+                 'Preta':'#433D3D',
+                 'Não Declarada':'#4D7CA8'}
+        
+                 
+        
+        papel = ['A','P','F']
+        
+        bar_cor_inst_papel = go.Figure()              
+                
+        for i in colors:
+            bar_cor_inst_papel.add_trace( go.Bar(name = i, x = df_cor_inst1[df_cor_inst1.cor == i].instituicao, 
+                        y = df_cor_inst1[df_cor_inst1.cor == i].ra,
+                        marker_color = colors[i]))
+        
+        for j in papel:
+            for i in colors:
+                bar_cor_inst_papel.add_trace(go.Bar(name = i, x = df_cor_inst[df_cor_inst.cor == i][ df_cor_inst.papel == j].instituicao,
+                            y = df_cor_inst[df_cor_inst.cor == i][df_cor_inst.papel == j].ra,
+                            marker_color = colors[i], visible=False))
+        
+                     
+        bar_cor_inst_papel.update_layout(barmode = 'stack', title='Selecione o papel desempenhado', xaxis=dict(title='Instituição'), 
+                                   yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+        
+        bar_cor_inst_papel.update_layout(xaxis={'categoryorder': 'array',
+                                 'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                   'Campus Campinas']})  
+        
+        
+        bar_cor_inst_papel.update_layout(updatemenus = [
+                dict(
+
+                    buttons = list([
+                        dict(
+
+                             label = 'Todos',
+                             method = 'update',
+                             args=[{'visible': [True]*6+[False]*18}]
+                    
+                        ),
+                        dict(label = 'Discente',
+                             method = 'update',
+                             args=[{'visible': [False]*6 + [True]*6 + [False]*12}]
+                    
+                        ),
+                        dict(label = 'Docente',
+                             method = 'update',
+                             args=[{'visible': [False]*12 + [True]*6 + [False]*6}]
+                    
+                        ),
+                        dict(label = 'Formador',
+                             method = 'update',
+                             args=[{'visible': [False]*18 + [True]*6 }]
+                    
+                        )
+                ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])        
+        
+######################################################################################################################                        
+        #Dataframe Renda X Instituição X Papel
+        df_renda_inst = df_unique.groupby(['instituicao','classe','papel']).count()['ra'].reset_index()
+        df_renda_inst1 = df_unique.groupby(['instituicao','classe']).count()['ra'].reset_index()
+
+        #Gráfico de barras renda X Instituicao X Papel
+        rendas = {
+                 'E\r':'#6F7A8B',
+                 'D\r':'#BC996E',
+                 'C\r':'#837D65',
+                 'B\r':'#653D23',
+                 'A\r':'#E7E3D9',                                                        
+                 }
+        
+        
+        bar_renda_inst = go.Figure()
+         
+        
+            
+        for i in rendas:
+            bar_renda_inst.add_trace( go.Bar(name = i, x = df_renda_inst1[df_renda_inst1.classe == i].instituicao, 
+                    y = df_renda_inst1[df_renda_inst1.classe == i].ra,
+                    marker_color = rendas[i]))          
+
+        for j in papel:
+            for i in rendas:
+                bar_renda_inst.add_trace(go.Bar(name = i, x = df_renda_inst[df_renda_inst.classe == i][ df_renda_inst.papel == j].instituicao,
+                    y = df_renda_inst[df_renda_inst.classe == i][df_renda_inst.papel == j].ra,
+                    marker_color = rendas[i], visible=False))
+                                   
+
+        bar_renda_inst.update_layout(updatemenus = [
+                    dict(
+
+                        buttons = list([
+                            dict(
+
+                                 label = 'Todos',
+                                 method = 'update',
+                                 args=[{'visible': [True]*5+[False]*15}]
+                        
+                            ),
+                            dict(label = 'Ensino Médio',
+                                 method = 'update',
+                                 args=[{'visible': [False]*5 + [True]*5 + [False]*10}]
+                        
+                            ),
+                            dict(label = 'Graduação',
+                                 method = 'update',
+                                 args=[{'visible': [False]*10 + [True]*5 + [False]*5}]
+                        
+                            ),
+                            dict(label = 'Pós Graduação',
+                                 method = 'update',
+                                 args=[{'visible': [False]*15 + [True]*5 }]
+                        
+                            )
+                    ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])         
+              
+        bar_renda_inst.update_layout(barmode = 'stack', title='Selecione o papel', xaxis=dict(title='Instituição'), 
+                                       yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+            
+        bar_renda_inst.update_layout(xaxis={'categoryorder': 'array',
+                                     'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                       'Campus Campinas']})    
+ 
+#########################################################################################
+        df_renda_inst = df_unique.groupby(['instituicao','classe','nivel']).count()['ra'].reset_index()
+        df_renda_inst1 = df_unique.groupby(['instituicao','classe']).count()['ra'].reset_index()
+        bar_renda_inst_papel = go.Figure()
+         
+        
+            
+        for i in rendas:
+            bar_renda_inst_papel.add_trace( go.Bar(name = i, x = df_renda_inst1[df_renda_inst1.classe == i].instituicao, 
+                    y = df_renda_inst1[df_renda_inst1.classe == i].ra,
+                    marker_color = rendas[i]))          
+
+        for j in nivel:
+            for i in rendas:
+                bar_renda_inst_papel.add_trace(go.Bar(name = i, x = df_renda_inst[df_renda_inst.classe == i][df_renda_inst.nivel==j].instituicao,
+                    y = df_renda_inst[df_renda_inst.classe == i][df_renda_inst.nivel==j].ra,
+                    marker_color = rendas[i], visible=False))       
+
+        bar_renda_inst_papel.update_layout(updatemenus = [
+                    dict(
+
+                        buttons = list([
+                            dict(
+
+                                 label = 'Todos',
+                                 method = 'update',
+                                 args=[{'visible': [True]*5+[False]*15}]
+                        
+                            ),
+                            dict(label = 'Discente',
+                                 method = 'update',
+                                 args=[{'visible': [False]*5 + [True]*5 + [False]*10}]
+                        
+                            ),
+                            dict(label = 'Docente',
+                                 method = 'update',
+                                 args=[{'visible': [False]*10 + [True]*5 + [False]*5}]
+                        
+                            ),
+                            dict(label = 'Formador',
+                                 method = 'update',
+                                 args=[{'visible': [False]*15 + [True]*5 }]
+                        
+                            )
+                    ]), pad={"r": 10, "t": 10}, direction='down', x= 0.005, y=1.2, xanchor='left',yanchor='top')])         
+              
+        bar_renda_inst_papel.update_layout(barmode = 'stack', title='Selecione o nível', xaxis=dict(title='Instituição'), 
+                                       yaxis = dict(title='Número de pessoas'), hovermode='x unified')
+            
+        bar_renda_inst_papel.update_layout(xaxis={'categoryorder': 'array',
+                                     'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
+                                                       'Campus Campinas']})        
+
+
+ 
+#########################################################################################        
+        fig_sex_inst = plot(bar_sex_inst, output_type='div')
+        fig_sex_inst_pap = plot(bar_sex_inst_pap, output_type='div')
+        fig_cor_inst = plot(bar_cor_inst, output_type='div')
+        fig_cor_inst_papel= plot(bar_cor_inst_papel, output_type='div')
+        fig_renda_inst = plot(bar_renda_inst, output_type = 'div')
+        fig_renda_inst_papel = plot(bar_renda_inst_papel, output_type = 'div')
+        
+        ctx = {'fig1': fig_sex_inst,'fig2': fig_sex_inst_pap, 'fig3': fig_cor_inst, 'fig4': fig_cor_inst_papel, 'fig6': fig_renda_inst, 'fig5': fig_renda_inst_papel}
+        return render(request, 'dashboard/index3.html', ctx)

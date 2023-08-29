@@ -102,6 +102,11 @@
 			transition: all .3s;
 
 		}
+		
+		.bordas{
+			margin-bottom: 5em;
+		}
+		
 
 	</style>
 
@@ -138,62 +143,63 @@
 		</p>
 
 	</div>
-	{% block content %}
-	<p> Última atualização em:{% autoescape off %}
-				{{ time }}
-				{% endautoescape %} 
+
 
 	<div class="loader"></div>
 		<div class="graphHidden">
+		<div class = 'bordas'>
 		<div class="row justify-content-md-center">
+			<h3 align='center'>Número de pessoas por gênero em cada instituição</h3>
 			<div class="col-md-auto">
-				
+				{% block content %}
 				{% autoescape off %}
-
 				{{ fig1 }}
 				{% endautoescape %}
-
 			</div>
 			<div class="col-md-auto">
-				{% autoescape off %}
-				{{ fig2 }}
-				{% endautoescape %}
-			</div>
+					{% autoescape off %}
+					{{ fig2 }}
+					{% endautoescape %}
+						
+			</div>				
 		</div>
+		</div>
+		
+		<div class = 'bordas'>
 		<div class="row justify-content-md-center">
+			<h3 align='center'>Número de pessoas por raça em cada instituição</h3>
 			<div class="col-md-auto">
+
 				{% autoescape off %}
-				{{ fig4 }}
+				{{ fig3 }}
 				{% endautoescape %}
 			</div>
 			<div class="col-md-auto">
+					{% autoescape off %}
+					{{ fig4 }}
+					{% endautoescape %}	
+			</div>				
+		</div>
+		</div>
+		
+		<div class = 'bordas'>
+		<div class="row justify-content-md-center">
+			<h3 align='center'>Número de pessoas por renda em cada instituição</h3>
+			<div class="col-md-auto">
+
 				{% autoescape off %}
 				{{ fig5 }}
 				{% endautoescape %}
 			</div>
+			<div class="col-md-auto">
+					{% autoescape off %}
+					{{ fig6 }}
+					{% endautoescape %}
+					{% endblock %}	
+			</div>				
 		</div>
-		<div class="row justify-content-md-center">
-				{% autoescape off %}
-				{{ fig3 }}
-				{% endautoescape %}
 		</div>
-		<div class="row justify-content-md-center">
-				{% autoescape off %}
-				{{ fig6 }}
-				{% endautoescape %}
 
-		</div>
-		<div class="row justify-content-md-center">
-				{% autoescape off %}
-				{{ fig7 }}
-				{% endautoescape %}
-		</div>
-		<div class="row justify-content-md-center">
-				{% autoescape off %}
-				{{ fig8 }}
-				{% endautoescape %}
-				{% endblock %}
-		</div>
 
 		</div>
 
