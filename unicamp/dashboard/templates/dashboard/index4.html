@@ -149,69 +149,33 @@
 		<div class="graphHidden">
 		<div class = 'bordas'>
 		<div class="row justify-content-md-center">
-			<h3 align='center'>Número de pessoas por gênero em cada instituição</h3>
-			<div class="col-md-auto">
+			<h3 align='center'>Número de discentes inscritos na Unicamp por região</h3>
+			<div class="col-md-10">
 				{% block content %}
 				{% autoescape off %}
 				{{ fig1 }}
 				{% endautoescape %}
-			</div>
-			<div class="col-md-auto">
-					{% autoescape off %}
-					{{ fig2 }}
-					{% endautoescape %}
-						
-			</div>				
+					
+			</div>	
 		</div>
-		</div>
-		
+		</div>		
 		<div class = 'bordas'>
 		<div class="row justify-content-md-center">
 			<h3 align='center'>Número de pessoas por raça em cada instituição</h3>
-			<div class="col-md-auto">
+			<div class="col-md-7">
 
 				{% autoescape off %}
-				{{ fig3 }}
+				{{ fig2 }}
 				{% endautoescape %}
 			</div>
-			<div class="col-md-auto">
+			<div class="col-md-3">
 					{% autoescape off %}
-					{{ fig4 }}
-					{% endautoescape %}	
-			</div>				
-		</div>
-		</div>
-		
-		<div class = 'bordas'>
-		<div class="row justify-content-md-center">
-			<h3 align='center'>Número de pessoas por renda em cada instituição</h3>
-			<div class="col-md-auto">
-
-				{% autoescape off %}
-				{{ fig5 }}
-				{% endautoescape %}
-			</div>
-			<div class="col-md-auto">
-					{% autoescape off %}
-					{{ fig6 }}
+					{{ fig3 }}
 					{% endautoescape %}
+					{% endblock %}					
 			</div>				
 		</div>
 		</div>
-		
-		<div class = 'bordas'>
-		<div class="row justify-content-md-center">
-			<h3 align='center'>Idade das pessoas de cada nível em cada unidade</h3>
-			<div class="col-md-auto">
-
-				{% autoescape off %}
-					{{ fig7 }}
-					{% endautoescape %}
-					{% endblock %}	
-			</div>				
-		</div>
-		</div>		
-
 
 		</div>
 

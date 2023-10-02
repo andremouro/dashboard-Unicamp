@@ -50,7 +50,6 @@ class SOCIO(models.Model):
     CPE = models.IntegerField()
     CR = models.IntegerField()
     CRP = models.IntegerField()
-    CLASSE = models.CharField(max_length = 2)
     id = models.IntegerField(primary_key=True)
     nome_curto = models.CharField(max_length=35, default='NA')
     papel = models.CharField(max_length=35, default='NA')
@@ -58,3 +57,11 @@ class SOCIO(models.Model):
     nivel = models.CharField(max_length=35, default='NA')
     unidade = models.CharField(max_length=35, default='NA')
     sigla_uni = models.CharField(max_length=35, default='NA')    
+    CLASSE = models.CharField(max_length = 2)
+    IDADE = models.IntegerField()
+    ESTADO = models.CharField(max_length = 2)
+    MUNICIPIO = models.CharField(max_length = 35, default = 'NA')
+    
+class MESO(models.Model):
+    MESORRE = models.CharField(max_length=100)
+    MUNICIPIO = models.CharField(max_length=100)
