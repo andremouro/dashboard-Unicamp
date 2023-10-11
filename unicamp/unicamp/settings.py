@@ -40,7 +40,10 @@ INSTALLED_APPS = [
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'dashboard',
     'bootstrap5',
+    'debug_toolbar',
 ]
+
+STATIC_URL = "static/"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -50,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'unicamp.urls'
@@ -72,6 +76,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'unicamp.wsgi.application'
 
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

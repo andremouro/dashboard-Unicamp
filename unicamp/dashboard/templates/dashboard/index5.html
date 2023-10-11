@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap css -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<!-- Chart.js -->
+	<script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+	<script src="plotly-2.26.0.min.js" charset="utf-8"></script>
+
+</head>
+<body>
+	{% block content %}
+	<div id="container">
+		<div class = 'row'>
+			<div class = 'col' id="bar_mat"></div>
+			<div class = 'col' id="bar_disc"></div>
+		</div>
+		<div class = 'row'>
+			<div class = 'col' id = 'pie_disc_inst'></div>
+			<div class = 'col' id = 'pie_disc_nivel'></div>
+		</div>
+		<div class = 'row'>
+			<div class = 'col' id = 'bar_disc_uni'></div>
+		</div>	
+		<div class = 'row'>
+			<div class = 'col' id = 'mat_uni'></div>
+		</div>
+		<div class = 'row'>
+			<div class = 'col' id = 'mat_uni_mean'></div>
+		</div>		
+		
+	</div>		
+
+<!-- Script para bar_mat -->
+	<script type = 'text/javascript'>
+		var received_data = {{ ra_uniq|safe }};
+
+		var disc_count = received_data.filter( ({ papel }) => papel == 'Discente');
+
+		let Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		let Discente = {
+			name: 'Discente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		let Formador = {
+			name: 'Formador',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		let Docente = {
+			name: 'Docente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de matrículas por instituição',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Quantidade de matrículas por função'
+				},
+				range: [0, 26000]
+			}
+			};
+	
+		received_data.filter( ({ papel }) => papel == 'Discente').forEach(function(val){
+			Discente.x.push(val['instituicao']);
+			Discente.y.push(val['ra__count']);
+		});
+		
+		received_data.filter( ({ papel }) => papel == 'Formador').forEach(function(val){
+			Formador.x.push(val['instituicao']);
+			Formador.y.push(val['ra__count']);
+		});	
+
+		received_data.filter( ({ papel }) => papel == 'Docente').forEach(function(val){
+			Docente.x.push(val['instituicao']);
+			Docente.y.push(val['ra__count']);
+		});
+
+		const res =[];
+		
+		const process = () =>
+			received_data.forEach((r) => {
+				const found = res.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.ra__count += r.ra__count;
+				} else {
+					res.push({ ...r });
+				}	
+			
+			});
+		process();
+		
+		res.forEach(function(val){
+			Total.x.push(val['instituicao']);
+			Total.y.push(val['ra__count']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_mat', [Discente, Formador, Docente,Total], layout,config);
+
+	</script>
+
+<!-- Script para bar_disc -->
+	<script type = 'text/javascript'>
+		var received_data = {{ disc_uniq|safe }};
+		
+		let Total2 = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+
+		let Graduacao = {
+			name: 'Graduação',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(235, 210, 181)'
+			}
+		}
+		
+		let Ensino_Medio = {
+			name: 'Ensino Médio',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(115, 144, 154)'
+			}
+		}
+		
+		let Pos_graduacao = {
+			name: 'Pós Graduação',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(153, 98, 31)'
+			}
+		}
+
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de disciplinas oferecidas por instituição',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Quantidade de disciplinas oferecidas'
+				},
+				range: [0, 9000]
+			}
+			};		
+
+		received_data.filter( ({ nivel }) => nivel == 'GRADUAÇÃO').forEach(function(val){
+			Graduacao.x.push(val['instituicao']);
+			Graduacao.y.push(val['nome__count']);
+		});
+		
+		received_data.filter( ({ nivel }) => nivel == 'ENSINO MÉDIO').forEach(function(val){
+			Ensino_Medio.x.push(val['instituicao']);
+			Ensino_Medio.y.push(val['nome__count']);
+		});	
+
+		received_data.filter( ({ nivel }) => nivel == 'PÓS GRADUAÇÃO').forEach(function(val){
+			Pos_graduacao.x.push(val['instituicao']);
+			Pos_graduacao.y.push(val['nome__count']);
+		});
+		
+		const res2 =[];
+		
+		const process2 = () =>
+			received_data.forEach((r) => {
+				const found = res2.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.nome__count += r.nome__count;
+				} else {
+					res2.push({ ...r });
+				}	
+			
+			});
+		process2();
+		
+		res2.forEach(function(val){
+			Total2.x.push(val['instituicao']);
+			Total2.y.push(val['nome__count']);
+		});	
+
+		var config = {responsive: true}
+
+		Plotly.newPlot('bar_disc', [Ensino_Medio,Graduacao,Pos_graduacao,Total2], layout, config);
+	</script>
+	
+<!-- Script pie_disc_nivel -->
+	<script type = 'text/javascript'>
+		var received_data = {{ disc_nivel_df|safe }};
+		
+		let Pie = {
+			values: [],
+			labels: [],
+			type: 'pie',			
+			marker: {
+				colors: ['rgb(235, 210, 181)','rgb(115, 144, 154)','rgb(153, 98, 31)']
+			}
+			
+		};
+		
+		var layout = {
+			title:{
+				text:'Proporção de disciplinas oferecidas por nível',
+				font: {
+					size:22
+				}
+			}
+			};		
+
+		received_data.filter( ({ nivel }) => nivel == 'Graduação').forEach(function(val){
+			Pie.labels.push(val['nivel']);
+			Pie.values.push(val['nome__count']);
+		});
+		
+		received_data.filter( ({ nivel }) => nivel == 'Ensino médio').forEach(function(val){
+			Pie.labels.push(val['nivel']);
+			Pie.values.push(val['nome__count']);
+		});	
+
+		received_data.filter( ({ nivel }) => nivel == 'Pós graduação').forEach(function(val){
+			Pie.labels.push(val['nivel']);
+			Pie.values.push(val['nome__count']);
+		});
+		
+		var config = {responsive: true};
+		Plotly.newPlot('pie_disc_nivel', [Pie], layout, config);
+	</script>	
+
+<!-- Script pie_disc_inst -->
+	<script type = 'text/javascript'>
+		var received_data = {{ disc_uniq|safe }};
+		
+		let Pie2 = {
+			values: [],
+			labels: [],
+			type: 'pie',
+			marker: {
+				colors: ['rgb(177, 134, 66)','rgb(175, 190, 162)','rgb(156, 180, 172)','rgb(156, 180, 172)','rgb(210, 181, 135)','rgb(210, 181, 135)','rgb(227, 232, 222)','rgb(227, 232, 222)']
+			}			
+		};
+		
+		var layout = {
+			title:{
+				text:'Proporção de disciplinas oferecidas por instituição',
+				font: {
+					size:22
+				}
+			}
+			};		
+
+		received_data.forEach(function(val){
+			Pie2.labels.push(val['instituicao']);
+			Pie2.values.push(val['nome__count']);
+		});
+		
+		
+		var config = {responsive: true}
+		Plotly.newPlot('pie_disc_inst', [Pie2], layout, config);
+	</script>
+
+<!-- Script bar_uni_df -->
+	<script type = 'text/javascript'>
+		var received_data = {{ disc_uni_df|safe }};
+		
+		let Barra = {
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(130, 147, 193)'
+			}
+		};
+		
+		var layout = {
+			hovermode:'x unified',
+			title:{
+				text:'Número de disciplinas oferecidas por unidade',
+				font: {
+					size:22
+				}
+			}
+			};		
+
+		received_data.forEach(function(val){
+			Barra.x.push(val['unidade']);
+			Barra.y.push(val['nome__count']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_disc_uni', [Barra], layout, config);
+	</script>		
+
+<!-- Script para mat_uni -->
+	<script type = 'text/javascript'>
+		var received_data = {{ mat_uni_df|safe }};
+
+		Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		Discente = {
+			name: 'Discente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		Formador = {
+			name: 'Formador',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		Docente = {
+			name: 'Docente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de matrículas por unidade',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Quantidade de matrículas por função'
+				},
+				range: [0, 5000]
+			}
+			};
+	
+		received_data.filter( ({ papel }) => papel == 'Discente').forEach(function(val){
+			Discente.x.push(val['unidade']);
+			Discente.y.push(val['ra']);
+		});
+		
+		received_data.filter( ({ papel }) => papel == 'Formador').forEach(function(val){
+			Formador.x.push(val['unidade']);
+			Formador.y.push(val['ra']);
+		});	
+
+		received_data.filter( ({ papel }) => papel == 'Docente').forEach(function(val){
+			Docente.x.push(val['unidade']);
+			Docente.y.push(val['ra']);
+		});
+
+		const res3 =[];
+		
+		const process3 = () =>
+			received_data.forEach((r) => {
+				const found = res3.find(
+				(a) =>
+					a.unidade == r.unidade
+				
+				);
+				if (found) {
+					found.ra += r.ra;
+				} else {
+					res3.push({ ...r });
+				}	
+			
+			});
+		process3();
+		
+		res3.forEach(function(val){
+			Total.x.push(val['unidade']);
+			Total.y.push(val['ra']);
+		});
+	
+		var config = {responsive: true}
+		
+		Plotly.newPlot('mat_uni', [Discente, Formador, Docente,Total], layout,config);
+
+	</script>
+
+<!-- Script para mat_uni_mean -->
+	<script type = 'text/javascript'>
+		var received_data = {{ mat_uni_mean|safe }};
+
+		Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		Discente = {
+			name: 'Discente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		Formador = {
+			name: 'Formador',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		Docente = {
+			name: 'Docente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Média de matrículas por unidade',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Média de matrículas por função'
+				},
+				range: [0, 55]
+			}
+			};
+	
+		received_data.filter( ({ papel }) => papel == 'Discente').forEach(function(val){
+			Discente.x.push(val['unidade']);
+			Discente.y.push(val['mean']);
+		});
+		
+		received_data.filter( ({ papel }) => papel == 'Formador').forEach(function(val){
+			Formador.x.push(val['unidade']);
+			Formador.y.push(val['mean']);
+		});	
+
+		received_data.filter( ({ papel }) => papel == 'Docente').forEach(function(val){
+			Docente.x.push(val['unidade']);
+			Docente.y.push(val['mean']);
+		});
+
+		const res4 =[];
+		
+		const process4 = () =>
+			received_data.forEach((r) => {
+				const found = res4.find(
+				(a) =>
+					a.unidade == r.unidade
+				
+				);
+				if (found) {
+					found.mean += r.mean;
+				} else {
+					res4.push({ ...r });
+				}	
+			
+			});
+		process4();
+		
+		res4.forEach(function(val){
+			Total.x.push(val['unidade']);
+			Total.y.push(val['mean']);
+		});
+		console.log(Discente);
+	
+		var config = {responsive: true}
+		
+		Plotly.newPlot('mat_uni_mean', [Discente, Formador, Docente,Total], layout,config);
+
+	</script>
+
+
+	{% endblock %}
+</body>
+</html>

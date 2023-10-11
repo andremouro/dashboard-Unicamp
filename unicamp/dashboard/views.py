@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 from urllib.request import urlopen
 import json
 from datetime import date
-
+from django.core import serializers
 
 # Classe da nova view usando o banco de dados atualizados
 class NewView(View):  # definimos a classe HomeView que será chamada dentro do urls.py
@@ -28,19 +28,22 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         m_ti = time.strptime(m_ti)
         m_ti = time.strftime("%d-%m-%Y %H:%M:%S", m_ti)
         
-        data = DACMOOD.objects.all()
+        data = DACMOOD.objects.all().values_list('ra','nome_curto','papel','instituicao','nivel','unidade')
+
         chart = [
             {
-                'ra': x.ra,
-                'nome_curto': x.nome_curto,
-                'papel': x.papel,
-                'instituicao': x.instituicao,
-                'nivel': x.nivel,
-                'unidade': x.unidade,
-            } for x in data
+                'ra': data[i][0],
+                'nome_curto': data[i][1],
+                'papel': data[i][2],
+                'instituicao': data[i][3],
+                'nivel': data[i][4],
+                'unidade': data[i][5],
+            } for i in range(0,len(data))
         ]
         df = pd.DataFrame(chart)
-
+        del chart, data
+        
+        
         # Dados para carga média das disciplinas por unidade
         carga = df.groupby(['unidade', 'papel']).count()['ra'].reset_index()
 
@@ -51,6 +54,8 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         pessoas_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('ra')
         frames = [pessoas_U, pessoas_C, pessoas_L]
         pessoas = pd.concat(frames)
+        del pessoas_U, pessoas_C, pessoas_L, frames
+
         pessoas.loc[pessoas['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
         pessoas.loc[pessoas['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
         pessoas.loc[
@@ -63,6 +68,8 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         disc_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('nome_curto')
         frames = [disc_U, disc_C, disc_L]
         disc = pd.concat(frames)
+        del disc_U, disc_C, disc_L, frames
+        
         disc.loc[disc['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
         disc.loc[disc['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
         disc.loc[
@@ -78,19 +85,35 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
         df4['mean'] = df4['tot'] / df4['nome_curto']
         df4.rename(columns={'mean': 'Média'}, inplace=True)
         df4['papel'] = df4['papel'].replace({'P': 'Docente', 'A': 'Discente', 'F': 'Formador'})
-
+        
+        df4_global = df3.groupby(['unidade']).count()['nome_curto'].reset_index()
+        df4_global['tot'] = df3.groupby(['unidade']).sum()['ra'].reset_index()['ra']
+        df4_global['mean'] = df4_global['tot'] / df4_global['nome_curto']
+        df4_global.rename(columns={'mean': 'Média'}, inplace=True)
+        
+        
         # Dados para carga média das disciplinas por unidade
         carga = df.groupby(['unidade', 'instituicao', 'papel']).nunique()['ra'].reset_index()
         carga.rename(columns={'ra': 'Contagem'}, inplace=True)
         carga['papel'] = carga['papel'].replace({'P': 'Docente', 'A': 'Discente', 'F': 'Formador'})
+        
+        carga_sum = df.groupby(['unidade']).nunique()['ra'].reset_index()
+        carga_sum.rename(columns={'ra': 'Contagem'}, inplace=True)
 
+        
         # Organização da estrutura de dados, como contagem do número de pessoas por instituição e por papel
         bar_df = pessoas.groupby(['instituicao', 'papel']).count()['ra'].reset_index()
         bar_df.rename(columns={'ra': 'Contagem'}, inplace=True)
-
+        
+        bar_df_sum = pessoas.groupby(['instituicao']).count()['ra'].reset_index()
+        bar_df_sum.rename(columns={'ra': 'Contagem'}, inplace=True)
+        
         # Organização da estrutura de dados, como contagem do número de pessoas por instituição e por papel
         bar_df_disc = disc.groupby(['instituicao', 'nivel']).count()['nome_curto'].reset_index()
         bar_df_disc.rename(columns={'nome_curto': 'Contagem'}, inplace=True)
+
+        bar_df_disc_sum = disc.groupby(['instituicao']).count()['nome_curto'].reset_index()
+        bar_df_disc_sum.rename(columns={'nome_curto': 'Contagem'}, inplace=True)
 
         # Dados para o gráfico de pizza
         pie_df_disc = disc.groupby(['unidade']).count()['nome_curto'].reset_index()
@@ -98,6 +121,8 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
 
         #
         df2 = df.groupby(['unidade', 'nome_curto', 'papel']).count()['ra'].reset_index()
+        
+        
 
         # Gráfico de barras: Número de alunos e professores por instituição
         bar = px.bar(bar_df, x="instituicao", y="Contagem", color="papel",
@@ -106,12 +131,22 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                          "instituicao": "Instituição",
                          "Contagem": "Número de discentes/docentes",
                          "papel": "Função"
-                     }, color_discrete_map={'Docente': '#2A2F33', 'Discente': '#8C9493', 'Formador': '#8B8B94'},
-                     custom_data=["papel"])
+                     }, 
+                     #color_discrete_map={'Docente': '#2A2F33', 'Discente': '#8C9493', 'Formador': '#8B8B94'},
+                     color_discrete_sequence=px.colors.qualitative.Antique,
+                     custom_data=["papel"],
+                     hover_data={'instituicao':False})
+                     
+        bar.add_trace(go.Bar(name='Total', x = bar_df_sum['instituicao'], y = bar_df_sum['Contagem'], opacity = 0, showlegend=False))          
 
-        bar.update_layout(xaxis={'categoryorder': 'array',
+        bar.update_layout(hovermode='x unified', yaxis_range=[0,max(bar_df_sum['Contagem'])+1000], xaxis={'categoryorder': 'array',
                                  'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
                                                    'Campus Campinas']})
+                                                   
+        bar.add_annotation(dict(y = max(bar_df_sum['Contagem'])+1000, x = 0.5, text = f"Total de pessoas: {sum(bar_df_sum['Contagem'])}", showarrow = False, bgcolor='white',
+            font = dict(size = 18), borderpad = 10))
+
+        del bar_df, bar_df_sum
 
         bar2 = px.bar(bar_df_disc, x="instituicao", y="Contagem", color="nivel",
                       title="Número disciplinas por instituição",
@@ -121,12 +156,18 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                           "nivel": "Nível"
                       },
                       color_discrete_map={'Ensino Médio': '#73909a', 'Graduação': '#ebd2b5',
-                                          'Pós Graduação': '#99621f'}
-                      )
-
-        bar2.update_layout(xaxis={'categoryorder': 'array',
+                                          'Pós Graduação': '#99621f'},
+                      hover_data={'instituicao':False})
+                      
+        bar2.add_trace(go.Bar(name = 'Total', x = bar_df_disc_sum['instituicao'], y = bar_df_disc_sum['Contagem'], opacity = 0, showlegend=False))    
+                      
+        bar2.update_layout(hovermode='x unified', yaxis_range=[0,max(bar_df_disc_sum['Contagem'])+1000],xaxis={'categoryorder': 'array',
                                   'categoryarray': ['COTIL', 'COTUCA', 'Campus Piracicaba', 'Campi Limeira',
                                                     'Campus Campinas']})
+
+        bar2.add_annotation(dict(y = max(bar_df_disc_sum['Contagem']+1000), x = 0.5, text = f"Total de disciplinas: {sum(bar_df_disc_sum['Contagem'])}", showarrow = False, bgcolor='white',
+            font = dict(size = 18), borderpad = 10))
+                                                    
 
         bar5 = px.bar(pie_df_disc, y='Contagem', x='unidade', title='Disciplinas por Unidade', color='unidade',
                       labels={
@@ -136,6 +177,12 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                       color_discrete_sequence=px.colors.qualitative.Antique,
                       height=1000
                       )
+                      
+        bar5.add_annotation(dict(y = max(pie_df_disc['Contagem']+1000), x = 1, text = f"Total de disciplinas: {sum(bar_df_disc_sum['Contagem'])}", showarrow = False, bgcolor='white',
+            font = dict(size = 18), borderpad = 10))
+              
+        del pie_df_disc
+
 
         pie2 = px.pie(bar_df_disc, values='Contagem', names='instituicao',
                       title='Disciplinas por Instituição',
@@ -155,36 +202,47 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
                       },
                       color_discrete_sequence=('#ebd2b5', '#99621f', '#73909a')
                       )
+                      
+        del bar_df_disc, bar_df_disc_sum              
 
         bar3 = px.bar(carga, x="unidade", y="Contagem", color="papel",
-                      title="Discentes e docentes por Unidade",
+                      title="Matrículas por Unidade",
                       labels={
                           "unidade": "Unidade",
-                          "Contagem": "Número de discentes/docentes por Unidade",
+                          "Contagem": "Número de matrículas",
                           "papel": "Papel"
                       },
                       color_discrete_sequence=px.colors.qualitative.Antique,
 
-                      height=1000
-
+                      height=1000,
+                      hover_data={'unidade':False}
                       )
 
+        bar3.add_annotation(dict(y = max(carga_sum['Contagem']+1000), x = 1, text = f"Total de matrículas: {sum(carga_sum['Contagem'])}", showarrow = False, bgcolor='white',
+            font = dict(size = 18), borderpad = 10))
+        bar3.update_layout(hovermode='x unified', yaxis_range=[0,max(carga_sum['Contagem'])+1000])
+        bar3.add_trace(go.Bar(name = 'Total', x = carga_sum['unidade'], y = carga_sum['Contagem'], opacity = 0, showlegend=False))    
+
+        del carga
+
         bar4 = px.bar(df4, x='unidade', y='Média', color='papel',
-                      title='Média de discentes e docentes por disciplina',
+                      title='Média de matrículas por disciplina',
                       labels={
                           'unidade': 'Unidade',
-                          'Média': 'Média de discentes/docentes por disciplina',
+                          'Média': 'Média de matrículas por disciplina',
                           'papel': 'Papel'
                       },
                       color_discrete_sequence=px.colors.qualitative.Antique,
                       height=1000)
+                       
+        del df4
 
         bar6 = px.bar(data_frame=df2, x='nome_curto', y='ra',
                       labels={
                           "nome_curto": "Disciplina",
-                          "ra": "Número de discentes/docentes por Unidade",
+                          "ra": "Número de matrículas",
                       }, height=1000,
-                      title='Número de discentes/docentes por disciplina'
+                      title='Número de matrículas por disciplina'
                       )
 
         bar6.add_shape(type="rect", xref='x domain', yref='y domain',
@@ -232,7 +290,9 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
 
         bar6.update_layout(updatemenus=[dict(buttons=buttons,
                                              pad={"r": 10, "t": 10}, direction='down', x=0.5, y=1.15)])
-
+        
+        del df2
+                
         fig1 = plot(bar, output_type='div')
         fig2 = plot(bar2, output_type='div')
         fig3 = plot(bar5, output_type='div')
@@ -1098,3 +1158,126 @@ class MapView(View):
         fig_pie = plot(fig3, output_type = 'div')
         ctx = {'fig1': fig_brasil, 'fig2': fig_mun2, 'fig3': fig_pie}
         return render(request, 'dashboard/index4.html', ctx)        
+        
+        
+        
+from django.db.models import Count     
+from django.core.serializers.json import DjangoJSONEncoder      
+from django.db.models import Case, When, Value, IntegerField
+
+
+class TestView(View):  # definimos a classe HomeView que será chamada dentro do urls.py
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index.html (que está dentro de irisjs)
+        path = r'C:\Users\André\Desktop\DashboardUnicamp\Dados\espelho_comp.csv'
+        ti_m = os.path.getmtime(path)
+        
+        m_ti = time.ctime(ti_m)
+        m_ti = time.strptime(m_ti)
+        m_ti = time.strftime("%d-%m-%Y %H:%M:%S", m_ti)
+        
+       
+
+        data = DACMOOD.objects.all().values_list('ra','nome_curto','papel','instituicao','nivel','unidade')
+
+        chart = [
+            {
+                'ra': data[i][0],
+                'nome_curto': data[i][1],
+                'papel': data[i][2],
+                'instituicao': data[i][3],
+                'nivel': data[i][4],
+                'unidade': data[i][5],
+            } for i in range(0,len(data))
+        ]
+        df = pd.DataFrame(chart)
+        del chart, data       
+        
+        #Contagem de matrículas por instituicao
+        bar_df = df.groupby(['instituicao','papel']).nunique()['ra'].reset_index()
+        bar_df.rename(columns={'ra': 'ra__count'}, inplace=True)   
+        
+        inst_order = ['COTIL','COTUCA','Campi Limeira','Campus Piracicaba','Campus Campinas']
+        bar_df['CustomOrder'] = bar_df['instituicao'].apply(lambda x: inst_order.index(x))
+        bar_df = bar_df.sort_values(by='CustomOrder')
+        bar_df = bar_df.drop(columns=['CustomOrder'])
+        
+        json_str = bar_df.to_json(orient='records')
+        ra_uniq = json.loads(json_str)
+
+        #Contagem de disciplinas por instituicao
+        disc_df = df.groupby(['instituicao','nivel']).nunique()['nome_curto'].reset_index()
+        disc_df.rename(columns={'nome_curto': 'nome__count'}, inplace=True)   
+        disc_df['CustomOrder'] = disc_df['instituicao'].apply(lambda x: inst_order.index(x))
+        disc_df = disc_df.sort_values(by='CustomOrder')
+        disc_df = disc_df.drop(columns=['CustomOrder'])
+        
+        json_str = disc_df.to_json(orient='records')
+        disc_uniq = json.loads(json_str)        
+        
+        #Contagem de disciplinas por nivel
+        disc_nivel_df = df.groupby(['nivel']).nunique()['nome_curto'].reset_index()
+        disc_nivel_df.rename(columns={'nome_curto': 'nome__count'}, inplace=True)   
+        labels = {'GRADUAÇÃO':'Graduação', 'PÓS GRADUAÇÃO':'Pós graduação', 'ENSINO MÉDIO': 'Ensino médio'}
+        disc_nivel_df['nivel'] = disc_nivel_df['nivel'].map(labels)
+        
+        json_str = disc_nivel_df.to_json(orient='records')
+        disc_nivel_df = json.loads(json_str)
+
+        #Contagem de disciplinas por unidade
+        disc_uni_df = df.groupby(['unidade']).nunique()['nome_curto'].reset_index()
+        disc_uni_df.rename(columns={'nome_curto': 'nome__count'}, inplace=True)   
+        
+        json_str = disc_uni_df.to_json(orient='records')
+        disc_uni_df = json.loads(json_str)        
+        
+        #Contagem de matrículas por unidade para cada nível
+        mat_uni_df = df.groupby(['unidade','papel']).nunique()['ra'].reset_index()
+        
+        json_str = mat_uni_df.to_json(orient='records')
+        mat_uni_df = json.loads(json_str)
+
+        #Média de matrículas por disciplina em cada unidade
+        mat_uni_sum = df.groupby(['unidade','nome_curto','papel']).nunique()['ra'].reset_index()
+        mat_uni_tot = mat_uni_sum.groupby(['unidade','papel']).count()['nome_curto'].reset_index()
+        mat_uni_tot['tot'] = mat_uni_sum.groupby(['unidade', 'papel']).sum()['ra'].reset_index()['ra']
+        mat_uni_tot['mean'] = mat_uni_tot['tot']/mat_uni_tot['nome_curto']
+        
+
+        json_str = mat_uni_tot.to_json(orient='records')
+        mat_uni_mean = json.loads(json_str)
+        print(mat_uni_tot)
+        
+        #Fornecer os dados para o front-end
+        ctx = {'ra_uniq': ra_uniq, 'disc_uniq': disc_uniq, 'disc_nivel_df': disc_nivel_df, 'disc_uni_df': disc_uni_df, 'mat_uni_df': mat_uni_df, 'mat_uni_mean': mat_uni_mean}
+        
+        return render(request, 'dashboard/index5.html', ctx)        
+        
+        
+'''
+        #Contagem dos RAs únicos em cada uma das instituições e ordenamento
+        ra_uniq = DACMOOD.objects.all().values('instituicao', 'papel').annotate(Count('ra', distinct = True)).annotate(
+            custom_order = Case(
+                When(instituicao= 'COTIL', then=Value(1)),
+                When(instituicao= 'COTUCA', then=Value(2)),
+                When(instituicao= 'Campi Limeira', then=Value(3)),
+                When(instituicao= 'Campus Piracicaba', then=Value(4)),
+                When(instituicao= 'Campus Campinas', then=Value(5)),
+                output_field=IntegerField(),
+            )).order_by('custom_order')
+      
+        ra_uniq = json.dumps(list(ra_uniq))
+        
+        #Contagem de Disciplinas oferecidas em cada uma das instituições
+        disc_inst = DACMOOD.objects.all().values('instituicao', 'nivel').annotate(Count('nome_curto', distinct=True)).annotate(
+            custom_order = Case(
+                When(instituicao= 'COTIL', then=Value(1)),
+                When(instituicao= 'COTUCA', then=Value(2)),
+                When(instituicao= 'Campi Limeira', then=Value(3)),
+                When(instituicao= 'Campus Piracicaba', then=Value(4)),
+                When(instituicao= 'Campus Campinas', then=Value(5)),
+                output_field=IntegerField(),
+            )).order_by('custom_order')
+        disc_inst = json.dumps(list(disc_inst))
+        print(disc_inst)
+'''        
