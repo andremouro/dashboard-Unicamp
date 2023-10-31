@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'dashboard',
     'bootstrap5',
     'debug_toolbar',
+    'django_filters',
 ]
 
 STATIC_URL = "static/"

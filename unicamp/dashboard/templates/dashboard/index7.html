@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap css -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<!-- Chart.js -->
+	<script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+	<script src="plotly-2.26.0.min.js" charset="utf-8"></script>
+
+</head>
+<body>
+	{% block content %}
+	<div id="container">
+		<div class = 'row'>
+			<form method = 'get'>
+				{{ myFilter.form }}
+			<button class = 'btn btn-primary' type = 'submit'>Filtrar </button>
+			</form>
+		</div>	
+		<div class = 'row'>
+			<div class = 'col-md-6 col-sm-12' id="bar_sex"></div>
+			<div class = 'col-md-6 col-sm-12' id="bar_rac"></div>
+		</div>
+		<div class = 'row'>
+			<div class = 'col-md-6 col-sm-12' id="bar_cla"></div>
+			<div class = 'col-md-6 col-sm-12' id="bar_ida"></div>
+		</div>		
+	</div>		
+
+<!-- Script para bar_sex -->
+	<script type = 'text/javascript'>
+		var received_data = {{ genbar | safe }};
+
+		
+		let Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		let Masculino = {
+			name: 'Masculino',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(37, 150, 190)'
+			}
+		}
+		
+		let Feminino = {
+			name: 'Feminino',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(190, 77, 37)'
+			}
+		}
+		
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de matrículas por gênero',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Número de matrículas'
+				},
+				range: [0, {{genbarmax|safe}}]
+			}
+			};
+	
+		received_data.filter( ({ sexo }) => sexo == 'M').forEach(function(val){
+			Masculino.x.push(val['instituicao']);
+			Masculino.y.push(val['ra']);
+		});
+		
+		received_data.filter( ({ sexo }) => sexo == 'F').forEach(function(val){
+			Feminino.x.push(val['instituicao']);
+			Feminino.y.push(val['ra']);
+		});	
+
+		const res =[];
+		
+		const process = () =>
+			received_data.forEach((r) => {
+				const found = res.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.ra += r.ra;
+				} else {
+					res.push({ ...r });
+				}	
+			
+			});
+		process();
+		
+		res.forEach(function(val){
+			Total.x.push(val['instituicao']);
+			Total.y.push(val['ra']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_sex', [Feminino, Masculino ,Total], layout,config);
+
+	</script>
+
+
+<!-- Script para bar_rac -->
+	<script type = 'text/javascript'>
+		var received_data = {{ racbar | safe }};
+
+		
+		Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		let Branca = {
+			name: 'Branca',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(178, 187, 199)'
+			}
+		}
+		
+		let Amarela = {
+			name: 'Amarela',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(171, 143, 94)'
+			}
+		}
+		
+		let Indigena = {
+			name: 'Indígena',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(187, 155, 137)'
+			}
+		}		
+		
+		let Parda = {
+			name: 'Parda',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(124, 84, 64)'
+			}
+		}	
+
+		let Preta = {
+			name: 'Preta',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(67, 61, 61)'
+			}
+		}		
+		
+		let ND = {
+			name: 'Não Declarada',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(77, 124, 168)'
+			}
+		}		
+		
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de matrículas por raça',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Número de matrículas'
+				},
+				range: [0, {{racbarmax|safe}}]
+			}
+			};
+	
+		received_data.filter( ({ cor }) => cor == 'BRANCA').forEach(function(val){
+			Branca.x.push(val['instituicao']);
+			Branca.y.push(val['ra']);
+		});
+		
+		received_data.filter( ({ cor }) => cor == 'PARDA').forEach(function(val){
+			Parda.x.push(val['instituicao']);
+			Parda.y.push(val['ra']);
+		});
+
+		received_data.filter( ({ cor }) => cor == 'INDÍGENA').forEach(function(val){
+			Indigena.x.push(val['instituicao']);
+			Indigena.y.push(val['ra']);
+		});		
+
+		received_data.filter( ({ cor }) => cor == 'AMARELA').forEach(function(val){
+			Amarela.x.push(val['instituicao']);
+			Amarela.y.push(val['ra']);
+		});	
+
+		received_data.filter( ({ cor }) => cor == 'PRETA').forEach(function(val){
+			Preta.x.push(val['instituicao']);
+			Preta.y.push(val['ra']);
+		});	
+
+		received_data.filter( ({ cor }) => cor == 'NÃO DECLARADA').forEach(function(val){
+			ND.x.push(val['instituicao']);
+			ND.y.push(val['ra']);
+		});		
+
+		const res2 =[];
+		
+		const process2 = () =>
+			received_data.forEach((r) => {
+				const found = res2.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.ra += r.ra;
+				} else {
+					res2.push({ ...r });
+				}	
+			
+			});
+		process2();
+		
+		res2.forEach(function(val){
+			Total.x.push(val['instituicao']);
+			Total.y.push(val['ra']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_rac', [Branca, Parda,Indigena,Amarela,Preta,ND,Total], layout,config);
+
+	</script>
+
+<!-- Script para bar_cla -->
+	<script type = 'text/javascript'>
+		var received_data = {{ clabar | safe }};
+
+		
+		Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		let A = {
+			name: 'Acima de 20 SM',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(231, 227, 217)'
+			}
+		}
+		
+		let B = {
+			name: '10 - 20 SM',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(101, 61, 35)'
+			}
+		}
+		
+		let C = {
+			name: '4 - 10 SM',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(131, 125, 101)'
+			}
+		}		
+		
+		let D = {
+			name: '2 - 4 SM',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(188, 153, 110)'
+			}
+		}	
+
+		let E = {
+			name: 'Até 2 SM',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(111, 122, 139)'
+			}
+		}		
+		
+		
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de matrículas por classe social',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Número de matrículas'
+				},
+				range: [0, {{clabarmax|safe}}]
+			}
+			};
+	
+		received_data.filter( ({ classe }) => classe == 'A').forEach(function(val){
+			A.x.push(val['instituicao']);
+			A.y.push(val['ra']);
+		});
+		
+		received_data.filter( ({ classe }) => classe == 'B').forEach(function(val){
+			B.x.push(val['instituicao']);
+			B.y.push(val['ra']);
+		});
+
+		received_data.filter( ({ classe }) => classe == 'C').forEach(function(val){
+			C.x.push(val['instituicao']);
+			C.y.push(val['ra']);
+		});		
+
+		received_data.filter( ({ classe }) => classe == 'D').forEach(function(val){
+			D.x.push(val['instituicao']);
+			D.y.push(val['ra']);
+		});	
+
+		received_data.filter( ({ classe }) => classe == 'E').forEach(function(val){
+			E.x.push(val['instituicao']);
+			E.y.push(val['ra']);
+		});	
+
+		const res3 =[];
+		
+		const process3 = () =>
+			received_data.forEach((r) => {
+				const found = res3.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.ra += r.ra;
+				} else {
+					res3.push({ ...r });
+				}	
+			
+			});
+		process3();
+		
+		res3.forEach(function(val){
+			Total.x.push(val['instituicao']);
+			Total.y.push(val['ra']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_cla', [E,D,C,B,A,Total], layout,config);
+
+	</script>
+
+<!-- Script para bar_ida -->
+	<script type = 'text/javascript'>
+		var received_data = {{ idabar | safe }};
+				
+		let Idade = {
+			name: 'Idade',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(37, 150, 190)'
+			}
+		}
+		
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Média de idade por instituição',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Média de idade'
+				},
+				range: [0, {{idabarmax|safe}}]
+			}
+			};
+		console.log(received_data)	
+		received_data.forEach(function(val){
+			Idade.x.push(val['instituicao']);
+			Idade.y.push(val['idade']);
+		});				
+	
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_ida', [Idade], layout,config);
+
+	</script>
+
+	{% endblock %}
+</body>
+</html>

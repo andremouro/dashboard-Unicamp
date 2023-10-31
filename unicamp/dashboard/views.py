@@ -49,32 +49,12 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
 
         # Tratamento dos dados. Remoção de duplicatas de usuários de cada uma das instituições e posterior combinação
         # em um único dataframe
-        pessoas_U = df[df['instituicao'] == 'UNICAMP'].drop_duplicates('ra')
-        pessoas_C = df[df['instituicao'] == 'COTUCA'].drop_duplicates('ra')
-        pessoas_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('ra')
-        frames = [pessoas_U, pessoas_C, pessoas_L]
-        pessoas = pd.concat(frames)
-        del pessoas_U, pessoas_C, pessoas_L, frames
-
-        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
-        pessoas.loc[pessoas['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
-        pessoas.loc[
-            pessoas['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
+        pessoas = df
         pessoas['papel'] = pessoas['papel'].replace({'P': 'Docente', 'A': 'Discente', 'F': 'Formador'})
 
         # Tratamento dos dados; Número de disciplinas por instituição. Remoção de duplicatas de usuários de cada uma das instituições e posterior combinação em um único dataframe
-        disc_U = df[df['instituicao'] == 'UNICAMP'].drop_duplicates('nome_curto')
-        disc_C = df[df['instituicao'] == 'COTUCA'].drop_duplicates('nome_curto')
-        disc_L = df[df['instituicao'] == 'COTIL'].drop_duplicates('nome_curto')
-        frames = [disc_U, disc_C, disc_L]
-        disc = pd.concat(frames)
-        del disc_U, disc_C, disc_L, frames
-        
-        disc.loc[disc['unidade'] == 'FACULDADE DE CIÊNCIAS APLICADAS', ['instituicao']] = 'Campi Limeira'
-        disc.loc[disc['unidade'] == 'FACULDADE DE ODONTOLOGIA DE PIRACIC', ['instituicao']] = 'Campus Piracicaba'
-        disc.loc[
-            disc['instituicao'] == 'UNICAMP', ['instituicao']] = 'Campus Campinas'
 
+        disc = df
         disc['nivel'] = disc['nivel'].replace(
             {'ENSINO MÉDIO': 'Ensino Médio', 'GRADUAÇÃO': 'Graduação', 'PÓS GRADUAÇÃO': 'Pós Graduação'})
 
@@ -102,21 +82,21 @@ class NewView(View):  # definimos a classe HomeView que será chamada dentro do 
 
         
         # Organização da estrutura de dados, como contagem do número de pessoas por instituição e por papel
-        bar_df = pessoas.groupby(['instituicao', 'papel']).count()['ra'].reset_index()
+        bar_df = pessoas.groupby(['instituicao', 'papel']).nunique()['ra'].reset_index()
         bar_df.rename(columns={'ra': 'Contagem'}, inplace=True)
         
-        bar_df_sum = pessoas.groupby(['instituicao']).count()['ra'].reset_index()
+        bar_df_sum = pessoas.groupby(['instituicao']).nunique()['ra'].reset_index()
         bar_df_sum.rename(columns={'ra': 'Contagem'}, inplace=True)
         
         # Organização da estrutura de dados, como contagem do número de pessoas por instituição e por papel
-        bar_df_disc = disc.groupby(['instituicao', 'nivel']).count()['nome_curto'].reset_index()
+        bar_df_disc = disc.groupby(['instituicao', 'nivel']).nunique()['nome_curto'].reset_index()
         bar_df_disc.rename(columns={'nome_curto': 'Contagem'}, inplace=True)
 
-        bar_df_disc_sum = disc.groupby(['instituicao']).count()['nome_curto'].reset_index()
+        bar_df_disc_sum = disc.groupby(['instituicao']).nunique()['nome_curto'].reset_index()
         bar_df_disc_sum.rename(columns={'nome_curto': 'Contagem'}, inplace=True)
 
         # Dados para o gráfico de pizza
-        pie_df_disc = disc.groupby(['unidade']).count()['nome_curto'].reset_index()
+        pie_df_disc = disc.groupby(['unidade']).nunique()['nome_curto'].reset_index()
         pie_df_disc.rename(columns={'nome_curto': 'Contagem'}, inplace=True)
 
         #
@@ -1164,7 +1144,7 @@ class MapView(View):
 from django.db.models import Count     
 from django.core.serializers.json import DjangoJSONEncoder      
 from django.db.models import Case, When, Value, IntegerField
-
+from .filters import DACMOODFilter, HOSTFilter, SOCIOFilter
 
 class TestView(View):  # definimos a classe HomeView que será chamada dentro do urls.py
     def get(self, request, *args,
@@ -1246,38 +1226,285 @@ class TestView(View):  # definimos a classe HomeView que será chamada dentro do
 
         json_str = mat_uni_tot.to_json(orient='records')
         mat_uni_mean = json.loads(json_str)
-        print(mat_uni_tot)
+
+       
+        #Nova consulta no banco de dados para adicionar os filtros
+        data2 = DACMOOD.objects.all().values_list('ra','nome_curto','papel','unidade')
+       
+        #Adicionar o filtro dos nomes curtos
+      
+        myFilter = DACMOODFilter(request.GET, queryset = data2)
+        data2 = myFilter.qs
+        
+        #criação do dataframe
+        chart2 = [
+            {
+                'ra': data2[i][0],
+                'nome_curto': data2[i][1],
+                'papel': data2[i][2],
+                'unidade': data2[i][3],
+            } for i in range(0,len(data2))
+        ]
+        df2 = pd.DataFrame(chart2)
+
+        print(df2)
+       
+        mat_uni_sum2 = df2.groupby(['unidade','nome_curto','papel']).nunique()['ra'].reset_index()
+        json_str = mat_uni_sum2.to_json(orient='records')
+        mat_disc = json.loads(json_str)         
         
         #Fornecer os dados para o front-end
-        ctx = {'ra_uniq': ra_uniq, 'disc_uniq': disc_uniq, 'disc_nivel_df': disc_nivel_df, 'disc_uni_df': disc_uni_df, 'mat_uni_df': mat_uni_df, 'mat_uni_mean': mat_uni_mean}
+        ctx = {'ra_uniq': ra_uniq, 'disc_uniq': disc_uniq, 'disc_nivel_df': disc_nivel_df, 'disc_uni_df': disc_uni_df, 'mat_uni_df': mat_uni_df, 'mat_uni_mean': mat_uni_mean,
+        'mat_disc': mat_disc, 'myFilter': myFilter}
         
         return render(request, 'dashboard/index5.html', ctx)        
         
-        
-'''
-        #Contagem dos RAs únicos em cada uma das instituições e ordenamento
-        ra_uniq = DACMOOD.objects.all().values('instituicao', 'papel').annotate(Count('ra', distinct = True)).annotate(
-            custom_order = Case(
-                When(instituicao= 'COTIL', then=Value(1)),
-                When(instituicao= 'COTUCA', then=Value(2)),
-                When(instituicao= 'Campi Limeira', then=Value(3)),
-                When(instituicao= 'Campus Piracicaba', then=Value(4)),
-                When(instituicao= 'Campus Campinas', then=Value(5)),
-                output_field=IntegerField(),
-            )).order_by('custom_order')
+
+class TestHostView(View):
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index2.html 
+
+
+        #Nova consulta no banco de dados para adicionar os filtros
+        data = HOST.objects.all().values_list('nome_curto','instituicao','unidade','hosp','nivel')
+       
+        #Adicionar o filtro dos nomes curtos
       
-        ra_uniq = json.dumps(list(ra_uniq))
+        myFilter = HOSTFilter(request.GET, queryset = data)
+        data = myFilter.qs
         
-        #Contagem de Disciplinas oferecidas em cada uma das instituições
-        disc_inst = DACMOOD.objects.all().values('instituicao', 'nivel').annotate(Count('nome_curto', distinct=True)).annotate(
-            custom_order = Case(
-                When(instituicao= 'COTIL', then=Value(1)),
-                When(instituicao= 'COTUCA', then=Value(2)),
-                When(instituicao= 'Campi Limeira', then=Value(3)),
-                When(instituicao= 'Campus Piracicaba', then=Value(4)),
-                When(instituicao= 'Campus Campinas', then=Value(5)),
-                output_field=IntegerField(),
-            )).order_by('custom_order')
-        disc_inst = json.dumps(list(disc_inst))
-        print(disc_inst)
-'''        
+        
+        chart = [
+            {
+                'nome_curto': data[i][0],
+                'instituicao': data[i][1],
+                'unidade': data[i][2],
+                'hosp': data[i][3],
+                'nivel': data[i][4]
+            } for i in range(0,len(data))
+        ]
+        df = pd.DataFrame(chart)
+        
+        hosts = np.unique(df['hosp'])
+
+        df.loc[df['hosp'] == 'DAC\r', 'hosp'] = 'DAC'
+        df.loc[df['hosp'] == 'GCLASSROOM\r', 'hosp'] = 'Classroom'
+        df.loc[df['hosp'] == 'MOODLE\r', 'hosp'] = 'Moodle'
+        df.loc[df['hosp'] == 'MOODLE_GCLASSROOM\r', 'hosp'] = 'Moodle + Classroom'
+
+        inst_order = ['COTIL','COTUCA','Campi Limeira','Campus Piracicaba','Campus Campinas']
+        
+        
+        #contagem de disciplinas por hospedagem em cada instituicao
+        discp = df.groupby(['instituicao', 'hosp']).count()['nome_curto'].reset_index()
+        discp['CustomOrder'] = discp['instituicao'].apply(lambda x: inst_order.index(x))
+        discp = discp.sort_values(by='CustomOrder')
+        discp = discp.drop(columns=['CustomOrder'])        
+        
+        
+        json_str = discp.to_json(orient='records')
+        discp = json.loads(json_str)
+        
+        #contagem de disciplinas por hospedagem
+        discpu = df.groupby(['hosp']).count()['nome_curto'].reset_index()
+       
+        json_str = discpu.to_json(orient='records')
+        discpu = json.loads(json_str)
+        
+        #contagem de disciplinas por hospedagem em cada unidade
+        discu = df.groupby(['unidade', 'hosp']).count()['nome_curto'].reset_index()
+        discumax = max(discu['nome_curto'])
+        
+        json_str = discu.to_json(orient='records')
+        discu = json.loads(json_str)
+        
+        #extrair o máximo de cada um dos df
+        discpsum = df.groupby(['instituicao']).count()['nome_curto'].reset_index()
+        discpmax = max(discpsum['nome_curto'])
+
+        
+
+        ctx = {'discp': discp, 'discpu': discpu, 'discu': discu, 'myFilter': myFilter, 'discpmax': discpmax, 'discumax': discumax}
+        return render(request, 'dashboard/index6.html', ctx)        
+        
+#Criação da classe para visualização dos dados socioeconomicos em JavaScript
+class SocioViewJS(View):
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index2.html 
+        #Extração dos dados armazenados dentro do model SOCIO
+        data = SOCIO.objects.all().values_list('ra','SEXO','COR_RACA','CLASSE','instituicao','nivel','papel','IDADE')
+        
+        #Adicionar o filtro dos papeis e niveis
+        myFilter = SOCIOFilter(request.GET, queryset = data)
+        data = myFilter.qs        
+        
+        chart = [
+            {
+                'ra': data[i][0],
+                'sexo': data[i][1],
+                'cor': data[i][2],
+                'classe': data[i][3],
+                'instituicao': data[i][4],
+                'nivel': data[i][5],
+                'papel': data[i][6],
+                'idade': data[i][7]
+            } for i in range(0,len(data))
+        ]
+        #Armazenamos os dados dentro do dataframe 'df'
+        df = pd.DataFrame(chart)
+
+        inst_order = ['','COTIL','COTUCA','Campi Limeira','Campus Piracicaba','Campus Campinas']
+       
+    
+        #contagem de matrículas por gênero
+        genbar = df.groupby(['instituicao', 'sexo']).nunique()['ra'].reset_index()
+        genbarmax = max(genbar.groupby(['instituicao']).sum()['ra'].reset_index()['ra'])
+        
+        genbar['CustomOrder'] = genbar['instituicao'].apply(lambda x: inst_order.index(x))
+        genbar = genbar.sort_values(by='CustomOrder')
+        genbar = genbar.drop(columns=['CustomOrder'])         
+        
+        json_str = genbar.to_json(orient='records')
+        genbar = json.loads(json_str)
+        
+        #contagem de matrículas por raça
+        racbar = df.groupby(['instituicao','cor']).nunique()['ra'].reset_index()
+        racbarmax = max(racbar.groupby(['instituicao']).sum()['ra'].reset_index()['ra'])
+        
+        racbar['CustomOrder'] = racbar['instituicao'].apply(lambda x: inst_order.index(x))
+        racbar = racbar.sort_values(by='CustomOrder')
+        racbar = racbar.drop(columns=['CustomOrder'])
+        
+        json_str = racbar.to_json(orient='records')
+        racbar = json.loads(json_str)        
+
+        #contagem de matrículas por classe
+        clabar = df.groupby(['instituicao','classe']).nunique()['ra'].reset_index()
+        clabarmax = max(clabar.groupby(['instituicao']).sum()['ra'].reset_index()['ra'])
+        
+        clabar['CustomOrder'] = clabar['instituicao'].apply(lambda x: inst_order.index(x))
+        clabar = clabar.sort_values(by='CustomOrder')
+        clabar = clabar.drop(columns=['CustomOrder'])
+        
+        json_str = clabar.to_json(orient='records')
+        clabar = json.loads(json_str)
+        
+        #média de idades por instituicao
+        idabar = df.groupby(['instituicao']).mean(numeric_only=True)['idade'].reset_index()
+        idabarmax = max(idabar['idade'])
+        
+        idabar['CustomOrder'] = idabar['instituicao'].apply(lambda x: inst_order.index(x))
+        idabar = idabar.sort_values(by='CustomOrder')
+        idabar = idabar.drop(columns=['CustomOrder'])
+        
+        json_str = idabar.to_json(orient='records')
+        idabar = json.loads(json_str)        
+    
+        ctx = {'genbar': genbar, 'genbarmax': genbarmax, 'racbar': racbar, 'racbarmax': racbarmax, 'clabar': clabar, 'clabarmax':clabarmax, 'myFilter': myFilter,'idabar':idabar,'idabarmax':idabarmax}
+        return render(request, 'dashboard/index7.html', ctx)
+
+
+#Criação da classe para visualização dos dados geográficos em JavaScript
+class MapViewJS(View):
+    def get(self, request, *args,
+            **kwargs):  # esta classe fará que, quando requisitada (pela homepage da nossa aplicação web) seja renderizado o index2.html 
+        #Extração dos dados em formato geoJson
+        with urlopen('https://raw.githubusercontent.com/giuliano-oliveira/geodata-br-states/main/geojson/br_states.json') as response:
+            brasil = json.load(response)
+        
+        data = SOCIO.objects.all().values_list('ra','ESTADO','MUNICIPIO','nivel','papel')
+        
+        #Adicionar o filtro dos papeis e niveis
+        myFilter = SOCIOFilter(request.GET, queryset = data)
+        data = myFilter.qs 
+        
+        chart = [
+            {
+                'ra': data[i][0],
+                'ESTADO': data[i][1],
+                'MUNICIPIO': data[i][2],
+                'nivel': data[i][3],
+                'papel': data[i][4]
+            } for i in range(0,len(data))
+        ]
+        #Armazenamos os dados dentro do dataframe 'df'
+        df = pd.DataFrame(chart)
+        df2 = df.groupby(['ESTADO']).count()['ra'].reset_index()
+        
+        sigla = ["NA"]* len(brasil['features'])
+        codigo = ["NA"]* len(brasil['features'])
+        
+        
+        #Dados das matrículas por Estado
+        for i in range(0,len(brasil['features'])):
+            sigla[i] = brasil['features'][i]['properties']['SIGLA']
+            codigo[i] = brasil['features'][i]['id']
+            
+        datas = pd.DataFrame({'Sigla':sigla,'id':codigo})
+
+
+        df2['id'] = ['Na']*len(df2['ESTADO'])
+        
+        print(df2)
+        
+        for i in range(0, len(datas['Sigla'])):
+            df2.loc[df2['ESTADO'] == datas['Sigla'][i], 'id'] = datas['id'][i]
+        
+        json_str = df2.to_json(orient='records')
+        df2j = json.loads(json_str)
+        
+        #Dados das matrículas por mesorregião de SP
+        data = MESO.objects.all()
+        chart = [
+            {
+                'MESORRE': x.MESORRE,
+                'MUNICIPIO': x.MUNICIPIO,
+            } for x in data
+        ]
+        #Armazenamos os dados dentro do dataframe 'df'
+        dfmeso = pd.DataFrame(chart)   
+        dfmeso['MUNICIPIO'] = dfmeso['MUNICIPIO'].replace({r'\r': ''}, regex=True)
+
+
+        with urlopen('https://raw.githubusercontent.com/fititnt/dados-referenciais-abertos/main/mesorregiao/geojson/mesorregiao.json') as response:
+            meso = json.load(response)
+
+        df2b = df.groupby(['ESTADO','MUNICIPIO']).count()['ra'].reset_index()
+        df2b['MUNICIPIO'] = df2b['MUNICIPIO'].replace({r'\r': ''}, regex=True)
+
+        df2a = df2b.loc[df2b['ESTADO'] == 'SP'].reset_index()
+        dfmeso['Qtd'] = 0
+    
+        
+        for i in range(0, len(dfmeso['MUNICIPIO'])):
+            dfmeso.loc[dfmeso['MUNICIPIO'] == dfmeso['MUNICIPIO'][i], 'MUNICIPIO'] = dfmeso['MUNICIPIO'][i].upper()
+
+
+
+        for i in range(0, len(df2a['MUNICIPIO'])):
+            df2a.loc[df2a['MUNICIPIO'] == df2a['MUNICIPIO'][i], 'MUNICIPIO'] = df2a['MUNICIPIO'][i].upper()
+
+        for i in range(0, len(df2a['MUNICIPIO'])):
+            dfmeso.loc[dfmeso['MUNICIPIO'] == df2a['MUNICIPIO'][i], 'Qtd'] = df2a['ra'][i]
+        for i in range(0, len(dfmeso['MUNICIPIO'])):
+            dfmeso.loc[dfmeso['MUNICIPIO'] == dfmeso['MUNICIPIO'][i], 'MESORRE'] = dfmeso['MESORRE'][i].upper()
+
+        #Quantidade de alunos por mesorregiao por nivel
+       
+        MUNICIPIO = np.repeat(dfmeso['MUNICIPIO'],3)
+        MESORRE = np.repeat(dfmeso['MESORRE'],3)
+        nivel2 = ['Ensino Médio', 'Graduação','Pós Graduação']*645
+        Qtd = ['Na']* len(MUNICIPIO)
+        
+        dfmeso2 = pd.DataFrame({'MUNICIPIO': MUNICIPIO,'MESORRE':MESORRE, 'nivel': nivel2, 'Qtd': Qtd})
+       
+        dfmeso = dfmeso.fillna(0)
+
+        dfmeso.rename(columns = {'MESORRE': 'MESO'}, inplace = True)
+        dfmeso = dfmeso.groupby(['MESO']).sum()['Qtd'].reset_index()
+        
+        json_str = dfmeso.to_json(orient='records')
+        dfmeso2 = json.loads(json_str)
+        
+        ctx = {'dfmap': df2j, 'dfmuni': dfmeso2, 'myFilter': myFilter,}
+        return render(request, 'dashboard/index8.html', ctx)        

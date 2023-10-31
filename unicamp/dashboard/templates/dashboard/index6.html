@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap css -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<!-- Chart.js -->
+	<script src="https://cdn.plot.ly/plotly-2.26.0.min.js" charset="utf-8"></script>
+	<script src="plotly-2.26.0.min.js" charset="utf-8"></script>
+
+</head>
+<body>
+	{% block content %}
+	<div id="container">
+		<div class = 'row'>
+			<form method = 'get'>
+				{{ myFilter.form }}
+			<button class = 'btn btn-primary' type = 'submit'>Filtrar </button>
+			</form>
+		</div>	
+		<div class = 'row'>
+			<div class = 'col-md-6 col-sm-12' id="bar_ava"></div>
+			<div class = 'col-md-6 col-sm-12' id="pie_ava"></div>
+		</div>
+		<div class = 'row'>
+			<div class = 'col' id="bar_ava_uni"></div>
+		</div>		
+	</div>		
+
+<!-- Script para bar_ava -->
+	<script type = 'text/javascript'>
+		var received_data = {{ discp|safe }};
+
+		
+		let Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		let Classroom = {
+			name: 'Classroom',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		let DAC = {
+			name: 'DAC',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		let Moodle = {
+			name: 'Moodle',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+		
+		let MoodleClassroom = {
+			name: 'Moodle + Classroom',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(115, 111, 76)'
+			}
+		}		
+
+		var layout = {
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de disciplinas por AVA',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Quantidade de disciplinas'
+				},
+				range: [0, {{discpmax|safe}}]
+			}
+			};
+	
+		received_data.filter( ({ hosp }) => hosp == 'Classroom').forEach(function(val){
+			Classroom.x.push(val['instituicao']);
+			Classroom.y.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'DAC').forEach(function(val){
+			DAC.x.push(val['instituicao']);
+			DAC.y.push(val['nome_curto']);
+		});	
+
+		received_data.filter( ({ hosp }) => hosp == 'Moodle').forEach(function(val){
+			Moodle.x.push(val['instituicao']);
+			Moodle.y.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'Moodle + Classroom').forEach(function(val){
+			MoodleClassroom.x.push(val['instituicao']);
+			MoodleClassroom.y.push(val['nome_curto']);
+		});		
+
+		const res =[];
+		
+		const process = () =>
+			received_data.forEach((r) => {
+				const found = res.find(
+				(a) =>
+					a.instituicao == r.instituicao
+				
+				);
+				if (found) {
+					found.nome_curto += r.nome_curto;
+				} else {
+					res.push({ ...r });
+				}	
+			
+			});
+		process();
+		
+		res.forEach(function(val){
+			Total.x.push(val['instituicao']);
+			Total.y.push(val['nome_curto']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_ava', [Classroom, DAC, Moodle, MoodleClassroom ,Total], layout,config);
+
+	</script>
+
+<!-- Script pie_ava -->
+	<script type = 'text/javascript'>
+		var received_data = {{ discpu|safe }};
+		
+		let Pie = {
+			values: [],
+			labels: [],
+			type: 'pie',			
+			marker: {
+				colors: ['rgb(133, 92, 117)','rgb(217, 175, 107)','rgb(175, 100, 88)','rgb(115, 111, 76)']
+			}
+			
+		};
+		
+		var layout = {
+			title:{
+				text:'Proporção de disciplinas oferecidas por AVA',
+				font: {
+					size:22
+				}
+			}
+			};		
+
+		received_data.filter( ({ hosp }) => hosp == 'Classroom').forEach(function(val){
+			Pie.labels.push(val['hosp']);
+			Pie.values.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'DAC').forEach(function(val){
+			Pie.labels.push(val['hosp']);
+			Pie.values.push(val['nome_curto']);
+		});	
+
+		received_data.filter( ({ hosp }) => hosp == 'Moodle').forEach(function(val){
+			Pie.labels.push(val['hosp']);
+			Pie.values.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'Moodle + Classroom').forEach(function(val){
+			Pie.labels.push(val['hosp']);
+			Pie.values.push(val['nome_curto']);
+		});		
+		
+		var config = {responsive: true};
+		Plotly.newPlot('pie_ava', [Pie], layout, config);
+	</script>
+
+<!-- Script para bar_ava -->
+	<script type = 'text/javascript'>
+		var received_data = {{ discu|safe }};
+
+		
+		let Total2 = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		Classroom = {
+			name: 'Classroom',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		DAC = {
+			name: 'DAC',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		Moodle = {
+			name: 'Moodle',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+		
+		MoodleClassroom = {
+			name: 'Moodle + Classroom',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(115, 111, 76)'
+			}
+		}		
+
+		var layout = {
+			margin:{
+				b: 200
+				},
+			height: 600,		
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Número de disciplinas por AVA em cada unidade',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Quantidade de disciplinas'
+				},
+				range: [0, {{discumax|safe}}]
+			}
+			};
+	
+		received_data.filter( ({ hosp }) => hosp == 'Classroom').forEach(function(val){
+			Classroom.x.push(val['unidade']);
+			Classroom.y.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'DAC').forEach(function(val){
+			DAC.x.push(val['unidade']);
+			DAC.y.push(val['nome_curto']);
+		});	
+
+		received_data.filter( ({ hosp }) => hosp == 'Moodle').forEach(function(val){
+			Moodle.x.push(val['unidade']);
+			Moodle.y.push(val['nome_curto']);
+		});
+		
+		received_data.filter( ({ hosp }) => hosp == 'Moodle + Classroom').forEach(function(val){
+			MoodleClassroom.x.push(val['unidade']);
+			MoodleClassroom.y.push(val['nome_curto']);
+		});		
+
+		const res2 =[];
+		
+		const process2 = () =>
+			received_data.forEach((r) => {
+				const found = res2.find(
+				(a) =>
+					a.unidade == r.unidade
+				
+				);
+				if (found) {
+					found.nome_curto += r.nome_curto;
+				} else {
+					res2.push({ ...r });
+				}	
+			
+			});
+		process2();
+		
+		res2.forEach(function(val){
+			Total2.x.push(val['unidade']);
+			Total2.y.push(val['nome_curto']);
+		});
+		
+		var config = {responsive: true}
+		
+		Plotly.newPlot('bar_ava_uni', [Classroom, DAC, Moodle, MoodleClassroom ,Total2], layout,config);
+
+	</script>
+
+
+	{% endblock %}
+</body>
+</html>

@@ -16,12 +16,12 @@
 	{% block content %}
 	<div id="container">
 		<div class = 'row'>
-			<div class = 'col' id="bar_mat"></div>
-			<div class = 'col' id="bar_disc"></div>
+			<div class = 'col-md-6 col-sm-12' id="bar_mat"></div>
+			<div class = 'col-md-6 col-sm-12' id="bar_disc"></div>
 		</div>
 		<div class = 'row'>
-			<div class = 'col' id = 'pie_disc_inst'></div>
-			<div class = 'col' id = 'pie_disc_nivel'></div>
+			<div class = 'col-md-6 col-sm-12' id = 'pie_disc_inst'></div>
+			<div class = 'col-md-6 col-sm-12' id = 'pie_disc_nivel'></div>
 		</div>
 		<div class = 'row'>
 			<div class = 'col' id = 'bar_disc_uni'></div>
@@ -31,6 +31,14 @@
 		</div>
 		<div class = 'row'>
 			<div class = 'col' id = 'mat_uni_mean'></div>
+		</div>	
+		<div class = 'row'>
+			<form method = 'get'>
+				{{ myFilter.form }}
+			<button class = 'btn btn-primary' type = 'submit'>Filtrar </button>
+			</form>
+		
+			<div class = 'col' id = 'mat_disc'></div>
 		</div>		
 		
 	</div>		
@@ -338,13 +346,17 @@
 		};
 		
 		var layout = {
+			margin:{
+				b: 200
+				},
+			height: 600,	
 			hovermode:'x unified',
 			title:{
 				text:'Número de disciplinas oferecidas por unidade',
 				font: {
 					size:22
 				}
-			}
+			}		
 			};		
 
 		received_data.forEach(function(val){
@@ -404,6 +416,10 @@
 		}
 
 		var layout = {
+			margin:{
+				b: 200
+				},
+			height: 600,
 			barmode: 'stack',
 			hovermode:'x unified',
 			title:{
@@ -511,6 +527,10 @@
 		}
 
 		var layout = {
+			margin:{
+				b: 200
+				},
+			height: 600,
 			barmode: 'stack',
 			hovermode:'x unified',
 			title:{
@@ -564,12 +584,124 @@
 			Total.x.push(val['unidade']);
 			Total.y.push(val['mean']);
 		});
-		console.log(Discente);
 	
 		var config = {responsive: true}
 		
 		Plotly.newPlot('mat_uni_mean', [Discente, Formador, Docente,Total], layout,config);
 
+	</script>
+	
+<!-- Script para mat_uni_mean -->
+	<script type = 'text/javascript'>
+		var received_data = {{ mat_disc|safe }};
+		
+		Total = {
+			name: 'Total',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(255, 255, 255)',
+				opacity: 0
+			},
+			showlegend: false
+		}
+		
+		Discente = {
+			name: 'Discente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(133, 92, 117)'
+			}
+		}
+		
+		Formador = {
+			name: 'Formador',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(217, 175, 107)'
+			}
+		}
+		
+		Docente = {
+			name: 'Docente',
+			x: [],
+			y: [],
+			type: 'bar',
+			marker: {
+				color: 'rgb(175, 100, 88)'
+			}
+		}
+
+		var layout = {
+			margin:{
+				b: 200
+				},
+			height: 600,
+			barmode: 'stack',
+			hovermode:'x unified',
+			title:{
+				text:'Média de matrículas por disciplina',
+				font: {
+					size:22
+				}
+			},
+			yaxis:{
+				title:{
+					text : 'Média de matrículas por função'
+				},
+				range: [0, 150]
+			}
+			};
+	
+		received_data.filter( ({ papel }) => papel == 'Discente').forEach(function(val){
+			Discente.x.push(val['nome_curto']);
+			Discente.y.push(val['ra']);
+		});
+		
+		received_data.filter( ({ papel }) => papel == 'Formador').forEach(function(val){
+			Formador.x.push(val['nome_curto']);
+			Formador.y.push(val['ra']);
+		});	
+
+		received_data.filter( ({ papel }) => papel == 'Docente').forEach(function(val){
+			Docente.x.push(val['nome_curto']);
+			Docente.y.push(val['ra']);
+		});
+
+		const res5 =[];
+		
+		const process5 = () =>
+			received_data.forEach((r) => {
+				const found = res5.find(
+				(a) =>
+					a.nome_curto == r.nome_curto
+				
+				);
+				if (found) {
+					found.ra += r.ra;
+				} else {
+					res5.push({ ...r });
+				}	
+			
+			});
+		process5();
+		
+		res5.forEach(function(val){
+			Total.x.push(val['nome_curto']);
+			Total.y.push(val['ra']);
+		});
+	
+		var config = {responsive: true}
+		
+		Plotly.newPlot('mat_disc', [Discente, Formador, Docente,Total], layout,config);		
+		
+		
+		
 	</script>
 
 
